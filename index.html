@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LA VOIE — L'Éveil du Disciple</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>✝</text></svg>">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ÉCRAN TITRE -->
+<div id="title-screen">
+  <div class="title-inner">
+    <div class="title-cross">✝</div>
+    <h1 class="game-title">LA VOIE</h1>
+    <h2 class="game-subtitle">L'Éveil du Disciple</h2>
+    <p class="title-verse">« Je suis le chemin, la vérité et la vie. » — Jean 14:6</p>
+    <div class="title-buttons">
+      <button id="btn-new-game" class="btn-main">✦ Nouvelle Partie</button>
+      <button id="btn-continue" class="btn-main" style="display:none">↻ Continuer</button>
+      <button id="btn-controls" class="btn-main btn-secondary">⌨ Commandes</button>
+    </div>
+    <p class="title-footer">Un voyage en monde ouvert à travers la ville de Théopolis,<br>du nouveau-né dans la foi jusqu'au disciple qui forme des disciples.</p>
+  </div>
+</div>
+
+<!-- ÉCRAN COMMANDES -->
+<div id="controls-screen" class="overlay-panel" style="display:none">
+  <div class="panel-box">
+    <h2>Commandes</h2>
+    <table class="controls-table">
+      <tr><td><kbd>Z Q S D</kbd> / <kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd></td><td>Se déplacer</td></tr>
+      <tr><td><kbd>Souris</kbd> (cliquer-glisser)</td><td>Orienter la caméra</td></tr>
+      <tr><td><kbd>Maj</kbd></td><td>Courir</td></tr>
+      <tr><td><kbd>Espace</kbd></td><td>Sauter</td></tr>
+      <tr><td><kbd>E</kbd></td><td>Interagir / Parler</td></tr>
+      <tr><td><kbd>F</kbd></td><td>Monter / descendre du vélo</td></tr>
+      <tr><td><kbd>J</kbd></td><td>Journal du disciple (quêtes, fruits, armure)</td></tr>
+      <tr><td><kbd>M</kbd></td><td>Carte de la ville</td></tr>
+      <tr><td><kbd>H</kbd></td><td>Aide / commandes</td></tr>
+      <tr><td><kbd>Échap</kbd></td><td>Fermer les fenêtres</td></tr>
+    </table>
+    <button class="btn-main btn-close-panel">Fermer</button>
+  </div>
+</div>
+
+<!-- JEU -->
+<div id="game-container" style="display:none">
+  <canvas id="game-canvas"></canvas>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div id="hud-top-left">
+      <div id="stage-badge">
+        <div id="stage-icon">🌱</div>
+        <div>
+          <div id="stage-name">Nouveau-né dans la foi</div>
+          <div id="stage-progress-bar"><div id="stage-progress-fill"></div></div>
+        </div>
+      </div>
+      <div id="quest-tracker">
+        <div id="quest-title">—</div>
+        <div id="quest-objective">—</div>
+      </div>
+    </div>
+    <div id="hud-top-right">
+      <canvas id="minimap" width="200" height="200"></canvas>
+      <div id="clock">☀ 08:00</div>
+    </div>
+    <div id="interact-prompt" style="display:none"><kbd>E</kbd> <span id="interact-label">Parler</span></div>
+    <div id="notifications"></div>
+    <div id="minigame-hud" style="display:none"></div>
+    <div id="hud-bottom-hint">J : Journal &nbsp;·&nbsp; M : Carte &nbsp;·&nbsp; H : Aide</div>
+  </div>
+
+  <!-- DIALOGUE -->
+  <div id="dialogue-box" style="display:none">
+    <div id="dialogue-portrait">🧔</div>
+    <div id="dialogue-content">
+      <div id="dialogue-speaker">Nom</div>
+      <div id="dialogue-text">…</div>
+      <div id="dialogue-choices"></div>
+      <div id="dialogue-next">▼ Espace / Clic pour continuer</div>
+    </div>
+  </div>
+
+  <!-- JOURNAL -->
+  <div id="journal" class="overlay-panel" style="display:none">
+    <div class="panel-box panel-wide">
+      <h2>📖 Journal du Disciple</h2>
+      <div class="journal-tabs">
+        <button class="jtab active" data-tab="jt-quests">Quêtes</button>
+        <button class="jtab" data-tab="jt-fruits">Fruit de l'Esprit</button>
+        <button class="jtab" data-tab="jt-armor">Armure de Dieu</button>
+        <button class="jtab" data-tab="jt-verses">Versets trouvés</button>
+      </div>
+      <div id="jt-quests" class="jtab-content active"></div>
+      <div id="jt-fruits" class="jtab-content"></div>
+      <div id="jt-armor" class="jtab-content"></div>
+      <div id="jt-verses" class="jtab-content"></div>
+      <button class="btn-main btn-close-panel">Fermer (J)</button>
+    </div>
+  </div>
+
+  <!-- GRANDE CARTE -->
+  <div id="map-overlay" class="overlay-panel" style="display:none">
+    <div class="panel-box">
+      <h2>🗺 Théopolis</h2>
+      <canvas id="bigmap" width="560" height="560"></canvas>
+      <button class="btn-main btn-close-panel">Fermer (M)</button>
+    </div>
+  </div>
+
+  <!-- MINI-JEU UI (quiz, versets) -->
+  <div id="minigame-panel" class="overlay-panel" style="display:none">
+    <div class="panel-box panel-wide" id="minigame-panel-box"></div>
+  </div>
+
+  <!-- ÉCRAN DE PASSAGE D'ÉTAPE -->
+  <div id="stage-up-screen" style="display:none">
+    <div class="stageup-inner">
+      <div id="stageup-icon">🌿</div>
+      <h2 id="stageup-title">Tu grandis dans la foi !</h2>
+      <p id="stageup-text"></p>
+      <button id="stageup-btn" class="btn-main">Continuer le chemin</button>
+    </div>
+  </div>
+</div>
+
+<script src="lib/three.min.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/data.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/save.js"></script>
+<script src="js/character.js"></script>
+<script src="js/city.js"></script>
+<script src="js/npc.js"></script>
+<script src="js/player.js"></script>
+<script src="js/bike.js"></script>
+<script src="js/quests.js"></script>
+<script src="js/minigames.js"></script>
+<script src="js/dialogue.js"></script>
+<script src="js/hud.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
