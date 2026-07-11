@@ -41,10 +41,11 @@ La progression est **sauvegardée automatiquement** dans le navigateur (localSto
 
 - **Personnage réaliste** : un humain 3D riggé (squelette de 49 os) avec de vraies animations
   squelettiques de marche, course et repos, embarqué dans le jeu (aucun téléchargement).
-- **Monde ouvert 3D** : une ville de 49 pâtés de maisons — église, place et fontaine, grand parc,
+- **Monde ouvert 3D au rendu cinématographique** (tone mapping ACES, matériaux PBR, textures
+  procédurales) : une ville de 49 pâtés de maisons — église, place et fontaine, grand parc,
   Colline de la Prière, champ du Semeur, marché, auberge, bibliothèque, entrepôts, quartiers
-  résidentiels et commerciaux — avec cycle jour/nuit, nuages, oiseaux, cloches d'église,
-  circulation et passants.
+  résidentiels et commerciaux — avec cycle jour/nuit (les fenêtres des immeubles s'allument
+  le soir), nuages, oiseaux, cloches d'église, circulation et passants.
 - **Véhicules conduisibles** : un vélo et trois voitures dispersées dans la ville (touche F).
 - **Lieux de prière** : devant l'église et au pied de la croix de la colline (touche E) —
   un temps de recueillement qui fait grandir la paix et la joie.

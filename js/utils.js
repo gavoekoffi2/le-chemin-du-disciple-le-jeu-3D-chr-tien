@@ -29,14 +29,42 @@ GAME.U = {
   }
 };
 
-// Fabrique de matériaux partagés (économie GPU)
+// Fabrique de matériaux partagés (économie GPU) — PBR pour un rendu plus riche
 GAME.mats = {};
 GAME.mat = function (color, opts) {
   const key = color + JSON.stringify(opts || {});
   if (!GAME.mats[key]) {
-    GAME.mats[key] = new THREE.MeshLambertMaterial(Object.assign({ color }, opts || {}));
+    GAME.mats[key] = new THREE.MeshStandardMaterial(
+      Object.assign({ color, roughness: 0.88, metalness: 0.04 }, opts || {}));
   }
   return GAME.mats[key];
+};
+
+// Texture de bruit en niveaux de gris (à teinter via material.color)
+GAME.makeNoiseTexture = function (brightness, contrast, size, blobs) {
+  size = size || 128;
+  blobs = blobs === undefined ? 40 : blobs;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  const img = ctx.createImageData(size, size);
+  for (let i = 0; i < img.data.length; i += 4) {
+    const v = Math.max(0, Math.min(255, brightness + (Math.random() - 0.5) * contrast));
+    img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+    img.data[i + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  // quelques taches plus larges pour casser la régularité
+  for (let k = 0; k < blobs; k++) {
+    ctx.fillStyle = 'rgba(' + (brightness > 128 ? '0,0,0' : '255,255,255') + ',' + (0.02 + Math.random() * 0.03) + ')';
+    ctx.beginPath();
+    ctx.arc(Math.random() * size, Math.random() * size, 4 + Math.random() * 14, 0, 7);
+    ctx.fill();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.encoding = THREE.sRGBEncoding;
+  return tex;
 };
 
 // Texture de fenêtres générée par canvas (pour les immeubles)
@@ -55,5 +83,6 @@ GAME.makeWindowTexture = function (baseColor, litRatio) {
   }
   const tex = new THREE.CanvasTexture(c);
   tex.magFilter = THREE.NearestFilter;
+  tex.encoding = THREE.sRGBEncoding;
   return tex;
 };

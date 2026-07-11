@@ -201,6 +201,9 @@ GAME.Player = (function () {
   }
 
   const camTarget = new THREE.Vector3();
+  const camDesired = new THREE.Vector3();
+  const camSmoothed = new THREE.Vector3();
+  let camInit = false;
   function positionCamera(dt) {
     const cam = player.camera;
     const d = player.camDist;
@@ -211,7 +214,16 @@ GAME.Player = (function () {
     // la caméra ne passe pas sous le sol
     const gy = GAME.world.groundHeight(px, pz);
     if (py < gy + 0.6) py = gy + 0.6;
-    cam.position.set(px, py, pz);
+    camDesired.set(px, py, pz);
+    // amortissement doux (et rattrapage instantané après une téléportation)
+    if (!camInit || camSmoothed.distanceTo(camDesired) > 30) {
+      camSmoothed.copy(camDesired);
+      camInit = true;
+    } else {
+      const k = 1 - Math.exp(-(dt || 0.016) * 12);
+      camSmoothed.lerp(camDesired, k);
+    }
+    cam.position.copy(camSmoothed);
     camTarget.set(player.pos.x, player.pos.y + 1.5, player.pos.z);
     cam.lookAt(camTarget);
   }

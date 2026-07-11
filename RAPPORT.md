@@ -16,9 +16,12 @@ Tout ce qui suit a été **testé automatiquement de bout en bout** dans un navi
   est embarqué en base64 dans le code pour rester compatible `file://`. L'armure de Dieu se
   fixe sur les os du squelette (casque sur la tête, bouclier à l'avant-bras, épée dans le dos…).
   Si le décodage échoue, un personnage stylisé de secours prend le relais automatiquement.
-- **Monde 3D réel** : ville de ~500 m × 500 m (49 blocs), vraie 3D WebGL avec caméra orbitale,
-  profondeur, ombres portées, relief (colline), cycle jour/nuit de 10 minutes avec lampadaires
-  qui s'allument, étoiles, aube/crépuscule.
+- **Monde 3D réel, rendu cinématographique** : ville de ~500 m × 500 m (49 blocs), vraie 3D
+  WebGL avec caméra orbitale amortie, profondeur, ombres portées, relief (colline), cycle
+  jour/nuit de 10 minutes. Pipeline moderne : tone mapping filmique (ACES), couleurs sRGB,
+  matériaux PBR (MeshStandardMaterial), textures procédurales (herbe, asphalte, pierre, terre),
+  trottoirs, et **fenêtres des immeubles qui s'illuminent à la tombée de la nuit** (cartes
+  émissives), lampadaires, étoiles, aube/crépuscule.
 - **Personnage 3e personne** : marche, course, saut, animations procédurales des membres,
   collisions contre ~230 obstacles (bâtiments, arbres, fontaine, caisses, voitures garées).
 - **Véhicules conduisibles** (touche F) : un vélo (le joueur pédale dessus, penché sur le

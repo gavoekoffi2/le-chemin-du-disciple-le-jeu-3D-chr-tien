@@ -55,13 +55,20 @@ GAME.buildCity = function (scene) {
     gpos.setY(i, world.groundHeight(gpos.getX(i), gpos.getZ(i)) - 0.05);
   }
   groundGeo.computeVertexNormals();
-  const ground = new THREE.Mesh(groundGeo, GAME.mat(0x59854c));
+  const grassNoise = GAME.makeNoiseTexture(200, 90);
+  grassNoise.repeat.set(90, 90);
+  const ground = new THREE.Mesh(groundGeo,
+    new THREE.MeshStandardMaterial({ color: 0x59854c, map: grassNoise, roughness: 0.95 }));
   ground.receiveShadow = true;
   scene.add(ground);
 
   /* ---------- Rues ---------- */
-  const roadMat = GAME.mat(0x3c4048);
-  const sideMat = GAME.mat(0x8f8f96);
+  const asphaltNoise = GAME.makeNoiseTexture(120, 55);
+  asphaltNoise.repeat.set(40, 1.5);
+  const roadMat = new THREE.MeshStandardMaterial({ color: 0x3c4048, map: asphaltNoise, roughness: 0.98 });
+  const sideNoise = GAME.makeNoiseTexture(190, 40);
+  sideNoise.repeat.set(24, 1);
+  const sideMat = new THREE.MeshStandardMaterial({ color: 0x9a9aa2, map: sideNoise, roughness: 0.95 });
   const lineMat = new THREE.MeshBasicMaterial({ color: 0xd8d8b0 });
   const roadGroup = new THREE.Group();
   const center = i => (i - (N - 1) / 2) * PITCH;
@@ -101,6 +108,32 @@ GAME.buildCity = function (scene) {
       inst.setMatrixAt(i, m4);
     });
     scene.add(inst);
+  }
+
+  // trottoirs : bandes claires autour des blocs (un seul InstancedMesh)
+  {
+    const stripGeo = new THREE.PlaneGeometry(BLOCK + 6, 2.6);
+    stripGeo.rotateX(-Math.PI / 2);
+    const strips = [];
+    for (let r = 0; r < N; r++) {
+      for (let c = 0; c < N; c++) {
+        if (r === 0 && c === 6) continue; // pas de trottoir sur la colline (relief)
+        const bx = center(c), bz = center(r);
+        strips.push([bx, bz - BLOCK / 2 - 1.3, 0]);
+        strips.push([bx, bz + BLOCK / 2 + 1.3, 0]);
+        strips.push([bx - BLOCK / 2 - 1.3, bz, Math.PI / 2]);
+        strips.push([bx + BLOCK / 2 + 1.3, bz, Math.PI / 2]);
+      }
+    }
+    const inst2 = new THREE.InstancedMesh(stripGeo, sideMat, strips.length);
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0);
+    strips.forEach((s, i) => {
+      q.setFromAxisAngle(up, s[2]);
+      m4.compose(new THREE.Vector3(s[0], 0.045, s[1]), q, new THREE.Vector3(1, 1, 1));
+      inst2.setMatrixAt(i, m4);
+    });
+    inst2.receiveShadow = true;
+    scene.add(inst2);
   }
 
   /* ---------- Types de blocs ---------- */
@@ -200,9 +233,33 @@ GAME.buildCity = function (scene) {
   }
 
   /* ---------- Immeubles ---------- */
-  const winTexDay = GAME.makeWindowTexture('#4a5568', 0.15);
-  const winTexDay2 = GAME.makeWindowTexture('#5a4a48', 0.15);
-  const winTexDay3 = GAME.makeWindowTexture('#3a4a5a', 0.2);
+  // paire de textures : façade (jour) + masque émissif (fenêtres qui s'allument la nuit)
+  function makeFacadeTextures(baseColor) {
+    const c = document.createElement('canvas');
+    c.width = 64; c.height = 128;
+    const ctx = c.getContext('2d');
+    const e = document.createElement('canvas');
+    e.width = 64; e.height = 128;
+    const ectx = e.getContext('2d');
+    ctx.fillStyle = baseColor; ctx.fillRect(0, 0, 64, 128);
+    ectx.fillStyle = '#000000'; ectx.fillRect(0, 0, 64, 128);
+    for (let y = 6; y < 122; y += 14) {
+      for (let x = 6; x < 58; x += 14) {
+        const lit = Math.random() < 0.4; // fenêtres qui s'allumeront la nuit
+        ctx.fillStyle = '#1c2333';
+        ctx.fillRect(x, y, 8, 9);
+        if (lit) { ectx.fillStyle = '#ffd98c'; ectx.fillRect(x, y, 8, 9); }
+      }
+    }
+    const map = new THREE.CanvasTexture(c);
+    const emissiveMap = new THREE.CanvasTexture(e);
+    map.magFilter = emissiveMap.magFilter = THREE.NearestFilter;
+    map.encoding = emissiveMap.encoding = THREE.sRGBEncoding;
+    return { map, emissiveMap };
+  }
+  const facades = [makeFacadeTextures('#4a5568'), makeFacadeTextures('#5a4a48'),
+                   makeFacadeTextures('#3a4a5a'), makeFacadeTextures('#6a625a')];
+  world.buildingMats = [];
   const buildingPalette = [0x8a94a8, 0xa89a8a, 0x7a8a9a, 0x9a8aa0, 0xb0a890, 0x8898a0];
   const housePalette = [0xd8c8a8, 0xc8b098, 0xe0d0b0, 0xb8c0a8, 0xd0b8a0, 0xc0a890];
   const roofPalette = [0x8a3a2a, 0x6a3a4a, 0x4a3a6a, 0x7a4a2a];
@@ -210,11 +267,18 @@ GAME.buildCity = function (scene) {
   function addBuilding(x, z, w, d, floors, isTower) {
     if (isReserved(x, z, Math.max(w, d) / 2 + 3)) return;
     const h = floors * 3.2;
-    const winTex = U.pick([winTexDay, winTexDay2, winTexDay3]);
-    const mat = new THREE.MeshLambertMaterial({ map: winTex.clone() });
-    mat.map.needsUpdate = true;
-    mat.map.repeat.set(Math.max(1, Math.round(w / 6)), Math.max(1, Math.round(floors / 2.2)));
-    mat.map.wrapS = mat.map.wrapT = THREE.RepeatWrapping;
+    const fac = U.pick(facades);
+    const mat = new THREE.MeshStandardMaterial({
+      map: fac.map.clone(), emissiveMap: fac.emissiveMap.clone(),
+      emissive: 0xffcc77, emissiveIntensity: 0, roughness: 0.85
+    });
+    const rx = Math.max(1, Math.round(w / 6)), ry = Math.max(1, Math.round(floors / 2.2));
+    [mat.map, mat.emissiveMap].forEach(tx => {
+      tx.needsUpdate = true;
+      tx.repeat.set(rx, ry);
+      tx.wrapS = tx.wrapT = THREE.RepeatWrapping;
+    });
+    world.buildingMats.push(mat);
     const body = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
     body.position.set(x, h / 2, z);
     body.castShadow = true; body.receiveShadow = true;
@@ -266,9 +330,14 @@ GAME.buildCity = function (scene) {
   }
 
   /* ---------- Blocs spéciaux ---------- */
+  const stoneNoise = GAME.makeNoiseTexture(205, 22, 128, 6);
+  stoneNoise.repeat.set(10, 10);
+  function pavedMat(color) {
+    return new THREE.MeshStandardMaterial({ color, map: stoneNoise, roughness: 0.92 });
+  }
   function buildChurch(bx, bz) {
     // parvis
-    const plaza = new THREE.Mesh(new THREE.PlaneGeometry(BLOCK, BLOCK), GAME.mat(0xb8b0a0));
+    const plaza = new THREE.Mesh(new THREE.PlaneGeometry(BLOCK, BLOCK), pavedMat(0xa39b8d));
     plaza.rotation.x = -Math.PI / 2;
     plaza.position.set(bx, 0.03, bz);
     plaza.receiveShadow = true;
@@ -323,7 +392,7 @@ GAME.buildCity = function (scene) {
   }
 
   function buildPlaza(bx, bz) {
-    const plaza = new THREE.Mesh(new THREE.PlaneGeometry(BLOCK, BLOCK), GAME.mat(0xc8b898));
+    const plaza = new THREE.Mesh(new THREE.PlaneGeometry(BLOCK, BLOCK), pavedMat(0xa08e6f));
     plaza.rotation.x = -Math.PI / 2;
     plaza.position.set(bx, 0.03, bz);
     plaza.receiveShadow = true;
@@ -358,9 +427,12 @@ GAME.buildCity = function (scene) {
     [-24, 24].forEach(off => { addTree(bx + off, bz + 22, false); addTree(bx + off, bz - 22, false); });
   }
 
+  const parkNoise = GAME.makeNoiseTexture(205, 70);
+  parkNoise.repeat.set(14, 14);
+  const parkMat = new THREE.MeshStandardMaterial({ color: 0x63975a, map: parkNoise, roughness: 0.95 });
   function buildPark(bx, bz, hasHill) {
     // herbe plus claire
-    const grass = new THREE.Mesh(new THREE.PlaneGeometry(BLOCK + 6, BLOCK + 6, 8, 8), GAME.mat(0x63975a));
+    const grass = new THREE.Mesh(new THREE.PlaneGeometry(BLOCK + 6, BLOCK + 6, 8, 8), parkMat);
     grass.rotation.x = -Math.PI / 2;
     const gp = grass.geometry.attributes.position;
     // épouse le relief (attention : plane tournée => y local = -z monde… on sculpte via world pos)
@@ -406,8 +478,11 @@ GAME.buildCity = function (scene) {
     }
   }
 
+  const soilNoise = GAME.makeNoiseTexture(150, 80);
+  soilNoise.repeat.set(10, 10);
+  const soilMat = new THREE.MeshStandardMaterial({ color: 0x7a5a34, map: soilNoise, roughness: 1 });
   function buildField(bx, bz) {
-    const soil = new THREE.Mesh(new THREE.PlaneGeometry(BLOCK, BLOCK), GAME.mat(0x7a5a34));
+    const soil = new THREE.Mesh(new THREE.PlaneGeometry(BLOCK, BLOCK), soilMat);
     soil.rotation.x = -Math.PI / 2;
     soil.position.set(bx, 0.05, bz);
     soil.receiveShadow = true;
@@ -439,7 +514,7 @@ GAME.buildCity = function (scene) {
   }
 
   function buildMarket(bx, bz) {
-    const plaza = new THREE.Mesh(new THREE.PlaneGeometry(BLOCK, BLOCK), GAME.mat(0xb0a088));
+    const plaza = new THREE.Mesh(new THREE.PlaneGeometry(BLOCK, BLOCK), pavedMat(0xb0a088));
     plaza.rotation.x = -Math.PI / 2;
     plaza.position.set(bx, 0.03, bz);
     scene.add(plaza);
@@ -768,12 +843,17 @@ GAME.buildCity = function (scene) {
     if (GAME.renderer) GAME.renderer.setClearColor(tmpCol);
     scene.fog.color.copy(tmpCol);
 
-    sun.intensity = 1.15 * dayness;
-    hemi.intensity = 0.3 + 0.5 * dayness;
-    moonLight.intensity = 0.35 * (1 - dayness);
+    // intensités adaptées au tone mapping filmique (ACES)
+    sun.intensity = 1.3 * dayness;
+    hemi.intensity = 0.32 + 0.5 * dayness;
+    moonLight.intensity = 0.38 * (1 - dayness);
     stars.material.opacity = (1 - dayness) * 0.9;
     cloudMat.color.setScalar(0.35 + 0.65 * dayness);
     cloudMat.opacity = 0.5 + 0.42 * dayness;
+
+    // les fenêtres des immeubles s'allument à la tombée de la nuit
+    const glow = Math.pow(1 - dayness, 1.5) * 1.4;
+    world.buildingMats.forEach(m => { m.emissiveIntensity = glow; });
 
     // position du soleil (angle selon l'heure)
     const ang = ((h - 6) / 12) * Math.PI; // 6h = lever, 18h = coucher

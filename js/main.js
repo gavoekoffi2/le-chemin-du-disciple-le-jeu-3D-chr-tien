@@ -50,6 +50,10 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // rendu cinématographique : couleurs sRGB + tone mapping filmique
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.95;
     GAME.renderer = renderer;
 
     scene = new THREE.Scene();
