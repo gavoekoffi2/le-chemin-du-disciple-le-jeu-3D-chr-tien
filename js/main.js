@@ -28,9 +28,18 @@
 
   function launch() {
     $('title-screen').style.display = 'none';
-    $('game-container').style.display = 'block';
     GAME.audio.startAmbient();
-    if (!started) { started = true; initGame(); }
+    if (!started) {
+      started = true;
+      // laisse le navigateur peindre l'écran de chargement avant la construction du monde
+      $('loading-screen').style.display = 'flex';
+      setTimeout(() => {
+        $('game-container').style.display = 'block';
+        initGame();
+      }, 60);
+    } else {
+      $('game-container').style.display = 'block';
+    }
   }
 
   /* ---------- Initialisation 3D ---------- */
@@ -93,6 +102,30 @@
     }
   }
 
+  /* ---------- Lieux de prière ---------- */
+  const PRAYER_SPOTS = [
+    { x: 0, z: 16, label: "Prier devant l'église", cd: 0,
+      verse: "« Demandez, et l'on vous donnera ; cherchez, et vous trouverez. » — Matthieu 7:7" },
+    { x: 216, z: -224, label: 'Prier au pied de la croix', cd: 0,
+      verse: "« Venez à moi, vous tous qui êtes fatigués et chargés, et je vous donnerai du repos. » — Matthieu 11:28" }
+  ];
+
+  function pray(spot) {
+    const p = GAME.Player.player;
+    p.frozen = true;
+    GAME.audio.bell();
+    GAME.UI.notify('🙏 ' + spot.verse);
+    spot.cd = performance.now() + 90000; // 90 s de recueillement entre deux prières
+    setTimeout(() => {
+      p.frozen = false;
+      ['paix', 'joie'].forEach(f => {
+        GAME.state.fruits[f] = Math.min(100, GAME.state.fruits[f] + 1);
+      });
+      GAME.UI.notify('🕊 Paix +1 · ☀ Joie +1', 'fruit');
+      GAME.save();
+    }, 2200);
+  }
+
   /* ---------- Interactions (E) ---------- */
   // renvoie la meilleure interaction disponible { label, action }
   function findInteraction() {
@@ -118,10 +151,27 @@
       return { label: 'Relancer la course de la persévérance', action: () => GAME.Minigames.start('race', true) };
     }
 
-    // 4. vélo
-    const bike = GAME.Bike.getBike();
-    if (bike && U.dist2D(bike.position.x, bike.position.z, ppos.x, ppos.z) < 3) {
-      return { label: 'Monter sur le vélo (touche F)', action: () => GAME.Bike.toggle(p) };
+    // 3 bis. lieux de prière
+    for (const spot of PRAYER_SPOTS) {
+      if (performance.now() < spot.cd) continue;
+      if (U.dist2D(ppos.x, ppos.z, spot.x, spot.z) < 4) {
+        return { label: spot.label, action: () => pray(spot) };
+      }
+    }
+
+    // 4. véhicules (vélo / voiture)
+    if (GAME.Bike.getBike()) {
+      const vt = GAME.Bike.nearestType(ppos);
+      return {
+        label: vt === 'car' ? 'Monter dans la voiture (touche F)' : 'Monter sur le vélo (touche F)',
+        action: () => GAME.Bike.toggle(p)
+      };
+    }
+
+    // 4 bis. réviser la Parole : quiz libre à la bibliothèque (après la quête de l'Épée)
+    if (GAME.state.completed.includes('q12') && !GAME.Minigames.activeGame() &&
+        U.dist2D(ppos.x, ppos.z, 78, 12) < 5) {
+      return { label: 'Réviser la Parole (quiz libre)', action: () => GAME.Minigames.start('quiz', true) };
     }
 
     // 5. n'importe quel PNJ visible : petite phrase
@@ -187,13 +237,28 @@
   }
 
   /* ---------- Boucle ---------- */
-  let scrollsApplied = false, minimapCd = 0;
+  let scrollsApplied = false, minimapCd = 0, frameNo = 0, lastHour = -1;
   function loop() {
     requestAnimationFrame(loop);
     const dt = Math.min(clock.getDelta(), 0.05);
     const t = clock.elapsedTime;
 
     if (!scrollsApplied) { applySavedScrolls(); scrollsApplied = true; }
+
+    // masque l'écran de chargement dès que le monde tourne
+    frameNo++;
+    if (frameNo === 3) $('loading-screen').style.display = 'none';
+
+    // cloches de l'église à 8h, 12h et 18h
+    const hour = Math.floor(GAME.world.timeOfDay);
+    if (hour !== lastHour) {
+      lastHour = hour;
+      if (hour === 8 || hour === 12 || hour === 18) {
+        GAME.audio.bell();
+        setTimeout(() => GAME.audio.bell(), 900);
+        GAME.UI.toastQuick('🔔 Les cloches de l\'église de la Grâce sonnent…');
+      }
+    }
 
     GAME.Player.update(dt, t);
     GAME.NPCManager.update(dt, t, GAME.Player.player.pos);
@@ -219,6 +284,13 @@
       minimapCd = 0.12;
       GAME.HUD.updateMinimap();
       GAME.HUD.updateClock();
+      // distance vers l'objectif
+      const target = GAME.Quests.getTargetPos();
+      const distEl = $('quest-distance');
+      if (target) {
+        const d = U.dist2D(target.x, target.z, GAME.Player.player.pos.x, GAME.Player.player.pos.z);
+        distEl.textContent = d > 8 ? '➤ à ' + Math.round(d) + ' m' : '➤ tu y es !';
+      } else distEl.textContent = '';
     }
 
     // sauvegarde périodique

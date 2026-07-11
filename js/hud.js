@@ -241,6 +241,10 @@ GAME.HUD = (function () {
         cs.style.display = cs.style.display === 'none' ? 'flex' : 'none';
       }
       else if (e.code === 'Escape') closeAll();
+      else if (e.code === 'KeyV') {
+        const on = GAME.audio.toggle();
+        GAME.UI.toast(on ? '🔊 Son activé' : '🔇 Son coupé');
+      }
     });
     let mapTimer = 0;
     setInterval(() => { if (mapOpen) drawBigMap(); }, 300);

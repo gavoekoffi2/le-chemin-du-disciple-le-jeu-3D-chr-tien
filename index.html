@@ -39,9 +39,19 @@
       <tr><td><kbd>J</kbd></td><td>Journal du disciple (quêtes, fruits, armure)</td></tr>
       <tr><td><kbd>M</kbd></td><td>Carte de la ville</td></tr>
       <tr><td><kbd>H</kbd></td><td>Aide / commandes</td></tr>
+      <tr><td><kbd>V</kbd></td><td>Couper / remettre le son</td></tr>
       <tr><td><kbd>Échap</kbd></td><td>Fermer les fenêtres</td></tr>
     </table>
     <button class="btn-main btn-close-panel">Fermer</button>
+  </div>
+</div>
+
+<!-- ÉCRAN DE CHARGEMENT -->
+<div id="loading-screen" style="display:none">
+  <div class="loading-inner">
+    <div class="loading-cross">✝</div>
+    <div class="loading-text">Théopolis s'éveille…</div>
+    <div class="loading-bar"><div class="loading-fill"></div></div>
   </div>
 </div>
 
@@ -62,6 +72,7 @@
       <div id="quest-tracker">
         <div id="quest-title">—</div>
         <div id="quest-objective">—</div>
+        <div id="quest-distance"></div>
       </div>
     </div>
     <div id="hud-top-right">
@@ -71,7 +82,7 @@
     <div id="interact-prompt" style="display:none"><kbd>E</kbd> <span id="interact-label">Parler</span></div>
     <div id="notifications"></div>
     <div id="minigame-hud" style="display:none"></div>
-    <div id="hud-bottom-hint">J : Journal &nbsp;·&nbsp; M : Carte &nbsp;·&nbsp; H : Aide</div>
+    <div id="hud-bottom-hint">J : Journal &nbsp;·&nbsp; M : Carte &nbsp;·&nbsp; H : Aide &nbsp;·&nbsp; V : Son</div>
   </div>
 
   <!-- DIALOGUE -->
@@ -129,6 +140,8 @@
 </div>
 
 <script src="lib/three.min.js"></script>
+<script src="lib/GLTFLoader.js"></script>
+<script src="assets/soldier-data.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/data.js"></script>
 <script src="js/audio.js"></script>

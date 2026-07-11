@@ -20,6 +20,7 @@ GAME.Player = (function () {
   let mouseDown = false, lastMX = 0, lastMY = 0;
 
   function init(scene, camera, canvas) {
+    // personnage de secours immédiat (remplacé dès que le modèle réaliste est prêt)
     player.ch = GAME.Character.create({ shirt: 0x3a6ea5, pants: 0x2f3550, skin: 0xd9a679, hair: 0x2a1a0a });
     player.group = player.ch.group;
     scene.add(player.group);
@@ -27,6 +28,18 @@ GAME.Player = (function () {
 
     // ré-application de l'armure sauvegardée
     (GAME.state.armor || []).forEach(id => GAME.Character.addArmorPiece(player.ch, id));
+
+    // modèle humain réaliste riggé (asynchrone : décodage + parse du GLB embarqué)
+    GAME.Character.loadRealPlayer(real => {
+      if (!real) return; // en cas d'échec, on garde le personnage stylisé
+      scene.remove(player.group);
+      player.ch = real;
+      player.group = real.group;
+      player.group.position.copy(player.pos);
+      player.group.rotation.y = player.yaw;
+      scene.add(player.group);
+      (GAME.state.armor || []).forEach(id => GAME.Character.addArmorPiece(player.ch, id));
+    });
 
     const p = GAME.state.pos;
     player.pos.set(p[0], p[1], p[2]);
@@ -135,7 +148,7 @@ GAME.Player = (function () {
 
   function update(dt, t) {
     const cam = player.camera;
-    if (player.onBike) { GAME.Bike.update(dt, keys, player); positionCamera(dt); return; }
+    if (player.onBike) { GAME.Bike.update(dt, keys, player, t); positionCamera(dt); return; }
 
     const ax = inputAxis();
     const moving = (Math.abs(ax.x) > 0.05 || Math.abs(ax.y) > 0.05) && !player.frozen;

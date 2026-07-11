@@ -37,6 +37,7 @@ GAME.audio = (function () {
     [196.0, 246.9, 293.7]    // G
   ];
   let chordIdx = 0;
+  const melodyNotes = [523.3, 587.3, 659.3, 784.0, 880.0]; // pentatonique de do
   function playPad() {
     if (!enabled || !ctx) return;
     const chord = chords[chordIdx % chords.length];
@@ -45,6 +46,13 @@ GAME.audio = (function () {
       tone(f / 2, 7.5, 'sine', 0.10 - i * 0.02, i * 0.15);
       tone(f, 7.5, 'triangle', 0.03, i * 0.2);
     });
+    // petite phrase mélodique aléatoire par-dessus la nappe
+    let d = 1.2 + Math.random() * 1.5;
+    const notes = 2 + Math.floor(Math.random() * 3);
+    for (let k = 0; k < notes; k++) {
+      tone(melodyNotes[Math.floor(Math.random() * melodyNotes.length)], 1.6, 'sine', 0.05, d);
+      d += 0.9 + Math.random() * 0.9;
+    }
   }
   function startAmbient() {
     if (!ensure() || padTimer) return;

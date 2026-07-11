@@ -688,6 +688,42 @@ GAME.buildCity = function (scene) {
   const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 1.6, transparent: true, opacity: 0 }));
   scene.add(stars);
 
+  /* ---------- Nuages ---------- */
+  const cloudMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.92 });
+  const clouds = [];
+  for (let i = 0; i < 13; i++) {
+    const cg = new THREE.Group();
+    const n = U.randInt(3, 5);
+    for (let k = 0; k < n; k++) {
+      const puff = new THREE.Mesh(new THREE.SphereGeometry(U.rand(5, 10), 8, 6), cloudMat);
+      puff.position.set(U.rand(-12, 12), U.rand(-2, 2), U.rand(-6, 6));
+      puff.scale.y = 0.55;
+      cg.add(puff);
+    }
+    cg.position.set(U.rand(-330, 330), U.rand(62, 100), U.rand(-330, 330));
+    scene.add(cg);
+    clouds.push({ g: cg, speed: U.rand(1.2, 2.8) });
+  }
+
+  /* ---------- Oiseaux ---------- */
+  const birdMat = GAME.mat(0x2a2f38);
+  const flocks = [];
+  for (let f = 0; f < 3; f++) {
+    const flock = { cx: U.rand(-150, 150), cz: U.rand(-150, 150), r: U.rand(30, 55), h: U.rand(30, 45), w: U.rand(0.15, 0.3), birds: [] };
+    for (let b = 0; b < 4; b++) {
+      const bird = new THREE.Group();
+      const w1 = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.05, 0.22), birdMat);
+      w1.rotation.z = 0.4; w1.position.x = -0.4;
+      const w2 = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.05, 0.22), birdMat);
+      w2.rotation.z = -0.4; w2.position.x = 0.4;
+      bird.add(w1); bird.add(w2);
+      bird.userData = { off: b * 0.6, w1, w2 };
+      scene.add(bird);
+      flock.birds.push(bird);
+    }
+    flocks.push(flock);
+  }
+
   scene.fog = new THREE.Fog(0xbfd8ee, 150, 520);
 
   const skyDay = new THREE.Color(0x87b8e8), skyNight = new THREE.Color(0x0a1026),
@@ -697,6 +733,28 @@ GAME.buildCity = function (scene) {
   world.updateDayNight = function (dt, playerPos) {
     world.timeOfDay = (world.timeOfDay + dt * 24 / 600) % 24; // 1 journée = 10 min
     const h = world.timeOfDay;
+    const tnow = performance.now() * 0.001;
+
+    // nuages qui dérivent
+    clouds.forEach(c => {
+      c.g.position.x += c.speed * dt;
+      if (c.g.position.x > 360) c.g.position.x = -360;
+    });
+
+    // vols d'oiseaux circulaires (le jour seulement)
+    const birdDay = h > 6 && h < 20;
+    flocks.forEach(fl => {
+      fl.birds.forEach(bird => {
+        bird.visible = birdDay;
+        if (!birdDay) return;
+        const a = tnow * fl.w + bird.userData.off;
+        bird.position.set(fl.cx + Math.cos(a) * fl.r, fl.h + Math.sin(a * 2) * 2, fl.cz + Math.sin(a) * fl.r);
+        bird.rotation.y = -a - Math.PI / 2;
+        const flap = Math.sin(tnow * 7 + bird.userData.off) * 0.5;
+        bird.userData.w1.rotation.z = 0.35 + flap;
+        bird.userData.w2.rotation.z = -0.35 - flap;
+      });
+    });
     // luminosité du jour : 0 la nuit, 1 en plein jour
     let dayness;
     if (h < 5 || h >= 21) dayness = 0;
@@ -714,6 +772,8 @@ GAME.buildCity = function (scene) {
     hemi.intensity = 0.3 + 0.5 * dayness;
     moonLight.intensity = 0.35 * (1 - dayness);
     stars.material.opacity = (1 - dayness) * 0.9;
+    cloudMat.color.setScalar(0.35 + 0.65 * dayness);
+    cloudMat.opacity = 0.5 + 0.42 * dayness;
 
     // position du soleil (angle selon l'heure)
     const ang = ((h - 6) / 12) * Math.PI; // 6h = lever, 18h = coucher

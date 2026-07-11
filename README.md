@@ -30,17 +30,24 @@ La progression est **sauvegardée automatiquement** dans le navigateur (localSto
 | **Souris** (cliquer-glisser) | Caméra orbitale · molette : zoom |
 | **Maj** | Courir |
 | **Espace** | Sauter |
-| **E** | Interagir / parler |
-| **F** | Monter / descendre du vélo |
+| **E** | Interagir / parler / prier |
+| **F** | Monter / descendre d'un véhicule (vélo ou voiture) |
 | **J** | Journal du disciple (quêtes, fruit de l'Esprit, armure, versets) |
 | **M** | Carte de Théopolis |
 | **H** | Aide |
+| **V** | Couper / remettre le son |
 
 ## 🌾 Le jeu
 
+- **Personnage réaliste** : un humain 3D riggé (squelette de 49 os) avec de vraies animations
+  squelettiques de marche, course et repos, embarqué dans le jeu (aucun téléchargement).
 - **Monde ouvert 3D** : une ville de 49 pâtés de maisons — église, place et fontaine, grand parc,
   Colline de la Prière, champ du Semeur, marché, auberge, bibliothèque, entrepôts, quartiers
-  résidentiels et commerciaux — avec cycle jour/nuit, circulation, passants et vélo libre.
+  résidentiels et commerciaux — avec cycle jour/nuit, nuages, oiseaux, cloches d'église,
+  circulation et passants.
+- **Véhicules conduisibles** : un vélo et trois voitures dispersées dans la ville (touche F).
+- **Lieux de prière** : devant l'église et au pied de la croix de la colline (touche E) —
+  un temps de recueillement qui fait grandir la paix et la joie.
 - **15 quêtes principales** inspirées des paraboles : la brebis perdue, le Semeur, le Bon
   Samaritain, le fils prodigue, les talents, le pardon (70×7), et l'envoi en mission.
 - **5 étapes de maturité** : Nouveau-né → Enfant de Dieu → Jeune dans la foi → Adulte → Père
@@ -50,14 +57,16 @@ La progression est **sauvegardée automatiquement** dans le navigateur (localSto
 - **Armure de Dieu** (Éphésiens 6) : 6 pièces d'équipement à gagner, visibles sur le personnage,
   avec des effets de jeu réels.
 - **5 mini-jeux** : semailles chronométrées, traits enflammés à bloquer au bouclier, course de la
-  persévérance (rejouable, avec record à battre), versets à reconstituer, grand quiz biblique.
+  persévérance (rejouable, avec record à battre), versets à reconstituer, grand quiz biblique
+  (rejouable en mode révision à la bibliothèque).
 - **10 parchemins de versets cachés** à découvrir en explorant.
 
 ## 🛠 Technique
 
-- **Three.js r147** (WebGL), embarqué dans `lib/` — aucune dépendance réseau.
-- Géométrie 100 % procédurale : ville, personnages, véhicules et props générés par code
-  (aucun asset binaire à télécharger).
+- **Three.js r147** (WebGL) + GLTFLoader, embarqués dans `lib/` — aucune dépendance réseau.
+- Le personnage jouable est un modèle GLB riggé (rig Mixamo, animations squelettiques),
+  **embarqué en base64** dans `assets/soldier-data.js` pour fonctionner même en `file://`.
+- Le reste est 100 % procédural : ville, PNJ, véhicules et props générés par code.
 - Tout tourne côté client ; sauvegarde en localStorage.
 - Structure : `js/data.js` (contenu narratif), `js/city.js` (génération du monde),
   `js/quests.js` (moteur de quêtes), `js/minigames.js`, `js/player.js`, `js/npc.js`,

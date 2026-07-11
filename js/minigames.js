@@ -20,7 +20,7 @@ GAME.Minigames = (function () {
     else if (game === 'shield') startShield();
     else if (game === 'race') startRace(freeMode);
     else if (game === 'verses') startVerses();
-    else if (game === 'quiz') startQuiz();
+    else if (game === 'quiz') startQuiz(freeMode);
   }
 
   function stop() {
@@ -288,8 +288,8 @@ GAME.Minigames = (function () {
   }
 
   /* ================= GRAND QUIZ BIBLIQUE (UI) ================= */
-  function startQuiz() {
-    active = { game: 'quiz', objects: [], qs: U.shuffle(GAME.DATA.quiz).slice(0, 8), idx: 0, score: 0 };
+  function startQuiz(freeMode) {
+    active = { game: 'quiz', objects: [], qs: U.shuffle(GAME.DATA.quiz).slice(0, 8), idx: 0, score: 0, freeMode: !!freeMode };
     GAME.UI.openPanel();
     renderQuizQuestion();
   }
@@ -299,12 +299,19 @@ GAME.Minigames = (function () {
     const box = document.getElementById('minigame-panel-box');
     if (a.idx >= a.qs.length) {
       const ok = a.score >= 6;
-      box.innerHTML = `<h2>${ok ? '🎉 Examen réussi !' : '📚 Presque…'}</h2>
+      const free = a.freeMode;
+      box.innerHTML = `<h2>${ok ? '🎉 ' + (free ? 'Belle révision !' : 'Examen réussi !') : '📚 Presque…'}</h2>
         <p class="mg-question">Score : <b>${a.score} / ${a.qs.length}</b> ${ok ? '— « Tu as bien manié l\'épée de l\'Esprit ! »' : '— il faut 6 bonnes réponses. « Étudie, et reviens ! »'}</p>
-        <div class="mg-options"><button class="btn-main" id="mg-quiz-end">${ok ? 'Recevoir l\'Épée de l\'Esprit' : 'Réessayer'}</button></div>`;
+        <div class="mg-options"><button class="btn-main" id="mg-quiz-end">${ok ? (free ? 'Fermer' : 'Recevoir l\'Épée de l\'Esprit') : (free ? 'Fermer' : 'Réessayer')}</button></div>`;
       box.querySelector('#mg-quiz-end').onclick = () => {
-        if (ok) { GAME.UI.closePanel(); done('quiz', true); }
-        else startQuiz();
+        if (ok && free) {
+          // récompense de révision : fidélité +1
+          GAME.state.fruits.fidelite = Math.min(100, GAME.state.fruits.fidelite + 1);
+          GAME.UI.notify('⚓ Fidélité +1 — la Parole se garde en la révisant !', 'fruit');
+          GAME.save();
+        }
+        if (ok || free) { GAME.UI.closePanel(); done('quiz', ok); }
+        else startQuiz(false);
       };
       if (ok) GAME.audio.success(); else GAME.audio.fail();
       return;
