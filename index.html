@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KAIROS — Le Chemin du Disciple</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✝️</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three.module.min.js" } }
+  </script>
+</head>
+<body>
+  <!-- Écran de chargement -->
+  <div id="loading-screen">
+    <div class="loading-inner">
+      <div class="loading-cross">✝</div>
+      <h1 class="loading-title">KAIROS</h1>
+      <p class="loading-subtitle">Le Chemin du Disciple</p>
+      <div class="loading-bar-outer"><div id="loading-bar"></div></div>
+      <p id="loading-text">Création du monde…</p>
+    </div>
+  </div>
+
+  <!-- Menu principal -->
+  <div id="main-menu" class="hidden">
+    <div class="menu-bg-gradient"></div>
+    <div class="menu-content">
+      <div class="menu-cross">✝</div>
+      <h1 class="menu-title">KAIROS</h1>
+      <p class="menu-subtitle">Le Chemin du Disciple</p>
+      <p class="menu-verse">« Le temps est accompli, et le royaume de Dieu est proche. » — Marc 1:15</p>
+      <div class="menu-buttons">
+        <button id="btn-continue" class="menu-btn hidden">▶ Continuer</button>
+        <button id="btn-newgame" class="menu-btn">✚ Nouvelle partie</button>
+        <button id="btn-controls" class="menu-btn">⌨ Commandes</button>
+      </div>
+      <p class="menu-footer">Théopolis vous attend, disciple.</p>
+    </div>
+  </div>
+
+  <!-- Panneau des commandes -->
+  <div id="controls-panel" class="overlay-panel hidden">
+    <div class="panel-box">
+      <h2>Commandes</h2>
+      <table class="controls-table">
+        <tr><td><kbd>Z Q S D</kbd> / <kbd>W A S D</kbd> / <kbd>←↑↓→</kbd></td><td>Se déplacer</td></tr>
+        <tr><td><kbd>Souris</kbd></td><td>Orienter la caméra (cliquer pour capturer)</td></tr>
+        <tr><td><kbd>Maj</kbd></td><td>Courir</td></tr>
+        <tr><td><kbd>Espace</kbd></td><td>Sauter</td></tr>
+        <tr><td><kbd>E</kbd></td><td>Interagir / Entrer-sortir d'un véhicule</td></tr>
+        <tr><td><kbd>J</kbd></td><td>Journal des quêtes</td></tr>
+        <tr><td><kbd>C</kbd></td><td>Fiche du disciple (fruits & armure)</td></tr>
+        <tr><td><kbd>M</kbd></td><td>Agrandir / réduire la carte</td></tr>
+        <tr><td><kbd>K</kbd></td><td>Musique on/off</td></tr>
+        <tr><td><kbd>Échap</kbd></td><td>Pause</td></tr>
+      </table>
+      <button class="menu-btn" id="btn-close-controls">Fermer</button>
+    </div>
+  </div>
+
+  <!-- Rendu 3D -->
+  <canvas id="game-canvas"></canvas>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <!-- Étape spirituelle + ressources -->
+    <div id="hud-top-left">
+      <div id="stage-badge">
+        <div id="stage-icon">🕊</div>
+        <div>
+          <div id="stage-name">Nouveau-né dans la foi</div>
+          <div id="grace-bar-outer"><div id="grace-bar"></div></div>
+          <div id="grace-label">Grâce : 0 / 100</div>
+        </div>
+      </div>
+      <div id="resources">
+        <span id="res-coins">🪙 0</span>
+        <span id="res-verses">📜 0/21</span>
+      </div>
+      <div id="spirit-bar-wrap" title="Esprit (endurance)"><div id="spirit-bar"></div></div>
+    </div>
+
+    <!-- Objectif -->
+    <div id="objective-box">
+      <div id="objective-title">Objectif</div>
+      <div id="objective-text">—</div>
+      <div id="objective-timer" class="hidden"></div>
+    </div>
+
+    <!-- Minimap -->
+    <canvas id="minimap" width="220" height="220"></canvas>
+
+    <!-- Invite d'interaction -->
+    <div id="interact-prompt" class="hidden"><kbd>E</kbd> <span id="interact-text">Parler</span></div>
+
+    <!-- Notifications -->
+    <div id="notifications"></div>
+
+    <!-- Flèche d'objectif hors-écran -->
+    <div id="offscreen-arrow" class="hidden">➤</div>
+
+    <!-- Aide rapide -->
+    <div id="hud-hints">J Journal · C Disciple · M Carte · Échap Pause</div>
+  </div>
+
+  <!-- Dialogue -->
+  <div id="dialogue-box" class="hidden">
+    <div id="dialogue-portrait">🙂</div>
+    <div id="dialogue-main">
+      <div id="dialogue-name">???</div>
+      <div id="dialogue-text"></div>
+      <div id="dialogue-choices" class="hidden"></div>
+      <div id="dialogue-next">▼ cliquer / E pour continuer</div>
+    </div>
+  </div>
+
+  <!-- Journal des quêtes -->
+  <div id="journal-panel" class="overlay-panel hidden">
+    <div class="panel-box wide">
+      <h2>📖 Journal du Disciple</h2>
+      <div id="journal-content"></div>
+      <button class="menu-btn" data-close="journal-panel">Fermer (J)</button>
+    </div>
+  </div>
+
+  <!-- Fiche du personnage -->
+  <div id="character-panel" class="overlay-panel hidden">
+    <div class="panel-box wide">
+      <h2>✝ Fiche du Disciple</h2>
+      <div id="char-stage-line"></div>
+      <div class="char-columns">
+        <div>
+          <h3>Le Fruit de l'Esprit <small>(Galates 5:22-23)</small></h3>
+          <div id="fruits-list"></div>
+        </div>
+        <div>
+          <h3>L'Armure de Dieu <small>(Éphésiens 6:13-17)</small></h3>
+          <div id="armor-list"></div>
+        </div>
+      </div>
+      <button class="menu-btn" data-close="character-panel">Fermer (C)</button>
+    </div>
+  </div>
+
+  <!-- Grande carte -->
+  <div id="bigmap-panel" class="overlay-panel hidden">
+    <div class="panel-box">
+      <h2>🗺 Théopolis</h2>
+      <canvas id="bigmap" width="560" height="560"></canvas>
+      <button class="menu-btn" data-close="bigmap-panel">Fermer (M)</button>
+    </div>
+  </div>
+
+  <!-- Mini-jeu : quiz de versets -->
+  <div id="quiz-panel" class="overlay-panel hidden">
+    <div class="panel-box wide">
+      <h2 id="quiz-title">📜 L'Épée de l'Esprit</h2>
+      <div id="quiz-progress"></div>
+      <div id="quiz-question"></div>
+      <div id="quiz-answers"></div>
+      <div id="quiz-feedback"></div>
+    </div>
+  </div>
+
+  <!-- Mini-jeu : les talents -->
+  <div id="talents-panel" class="overlay-panel hidden">
+    <div class="panel-box wide">
+      <h2>🪙 La Parabole des Talents</h2>
+      <p id="talents-intro"></p>
+      <div id="talents-options"></div>
+      <div id="talents-result" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- Pause -->
+  <div id="pause-panel" class="overlay-panel hidden">
+    <div class="panel-box">
+      <h2>⏸ Pause</h2>
+      <p id="pause-verse" class="menu-verse"></p>
+      <button class="menu-btn" id="btn-resume">Reprendre</button>
+      <button class="menu-btn" id="btn-pause-controls">Commandes</button>
+      <button class="menu-btn" id="btn-save-quit">Sauvegarder & Menu</button>
+    </div>
+  </div>
+
+  <!-- Passage d'étape spirituelle -->
+  <div id="stageup-panel" class="hidden">
+    <div class="stageup-inner">
+      <div class="stageup-rays"></div>
+      <div class="stageup-icon">✝</div>
+      <h2 id="stageup-title">Nouvelle étape</h2>
+      <p id="stageup-name"></p>
+      <p id="stageup-desc"></p>
+      <p id="stageup-armor"></p>
+      <button class="menu-btn" id="btn-stageup-ok">Amen</button>
+    </div>
+  </div>
+
+  <!-- Verset trouvé -->
+  <div id="verse-popup" class="hidden">
+    <div class="verse-inner">
+      <div class="verse-icon">📜</div>
+      <p id="verse-text"></p>
+      <p id="verse-ref"></p>
+    </div>
+  </div>
+
+  <!-- Fin -->
+  <div id="ending-panel" class="hidden">
+    <div class="ending-inner">
+      <div class="stageup-rays"></div>
+      <h1>La Course Achevée</h1>
+      <p id="ending-text"></p>
+      <button class="menu-btn" id="btn-ending-continue">Continuer à explorer Théopolis</button>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
