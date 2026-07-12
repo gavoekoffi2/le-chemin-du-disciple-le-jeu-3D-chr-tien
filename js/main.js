@@ -50,6 +50,86 @@
     if (loading) loading.style.display = 'none';
   }
 
+  function createRenderer(canvas, mobile) {
+    const attempts = [
+      { antialias: !mobile, powerPreference: mobile ? 'default' : 'high-performance' },
+      { antialias: false, powerPreference: 'default', failIfMajorPerformanceCaveat: false },
+      { antialias: false, alpha: false, stencil: false, depth: true, preserveDrawingBuffer: false, failIfMajorPerformanceCaveat: false }
+    ];
+    let lastErr = null;
+    for (const opts of attempts) {
+      try {
+        return new THREE.WebGLRenderer(Object.assign({ canvas }, opts));
+      } catch (err) {
+        lastErr = err;
+      }
+    }
+    throw lastErr || new Error('WebGL indisponible');
+  }
+
+  function startLiteMode(err) {
+    console.error('Démarrage en mode léger mobile', err);
+    hideLoadingScreen();
+    $('game-container').style.display = 'block';
+    $('quest-title').textContent = 'Le premier pas';
+    $('quest-objective').textContent = "Rejoins le parvis de l'église de la Grâce (suis le marqueur doré).";
+    $('quest-distance').textContent = '➤ à 86 m';
+    $('stage-name').textContent = 'Nouveau-né dans la foi';
+    $('clock').textContent = '☀ 08:00';
+
+    let canvas = $('game-canvas');
+    let ctx = canvas.getContext('2d');
+    if (!ctx) {
+      const fresh = document.createElement('canvas');
+      fresh.id = 'game-canvas';
+      fresh.style.width = canvas.style.width;
+      fresh.style.height = canvas.style.height;
+      canvas.replaceWith(fresh);
+      canvas = fresh;
+      ctx = canvas.getContext('2d');
+    }
+    if (!ctx) return;
+    const size = syncViewportSize();
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    canvas.width = Math.max(1, Math.floor(size.w * dpr));
+    canvas.height = Math.max(1, Math.floor(size.h * dpr));
+    canvas.style.width = size.w + 'px';
+    canvas.style.height = size.h + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    let px = size.w * 0.5, py = size.h * 0.76;
+    let targetX = size.w * 0.5, targetY = size.h * 0.28;
+    function draw() {
+      const w = size.w, h = size.h;
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, '#1d2947'); grad.addColorStop(0.55, '#253d2c'); grad.addColorStop(1, '#101722');
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = '#3e4650'; ctx.lineWidth = 18;
+      ctx.beginPath(); ctx.moveTo(w/2, 0); ctx.lineTo(w/2, h); ctx.moveTo(0, h*0.55); ctx.lineTo(w, h*0.55); ctx.stroke();
+      ctx.strokeStyle = '#d8c47a'; ctx.lineWidth = 2; ctx.setLineDash([16, 16]);
+      ctx.beginPath(); ctx.moveTo(w/2, 0); ctx.lineTo(w/2, h); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = '#d8a93e'; ctx.beginPath(); ctx.arc(targetX, targetY, 18 + Math.sin(Date.now()/220)*4, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#fff1b8'; ctx.font = 'bold 15px Georgia'; ctx.textAlign = 'center'; ctx.fillText('Église de la Grâce', targetX, targetY - 28);
+      ctx.fillStyle = '#77c36b'; ctx.beginPath(); ctx.arc(px, py, 15, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#ffffff'; ctx.font = '13px Arial'; ctx.fillText('Théophilis', px, py - 22);
+      ctx.fillStyle = 'rgba(10,14,28,.72)'; ctx.fillRect(18, h - 86, w - 36, 56);
+      ctx.fillStyle = '#ffe9b8'; ctx.font = '14px Georgia'; ctx.textAlign = 'left';
+      ctx.fillText('Mode mobile léger : touche l’écran vers la lumière dorée.', 30, h - 52);
+      requestAnimationFrame(draw);
+    }
+    function moveToward(x, y) {
+      px += (x - px) * 0.18;
+      py += (y - py) * 0.18;
+      const dist = Math.hypot(px - targetX, py - targetY);
+      $('quest-distance').textContent = dist < 34 ? '➤ tu y es !' : '➤ à ' + Math.max(1, Math.round(dist / 6)) + ' m';
+      if (dist < 34) $('quest-objective').textContent = 'Tu es arrivé au parvis. La suite arrive dans la version 3D.';
+    }
+    canvas.addEventListener('pointerdown', e => moveToward(e.clientX, e.clientY));
+    canvas.addEventListener('pointermove', e => { if (e.buttons || e.pressure) moveToward(e.clientX, e.clientY); });
+    draw();
+    if (GAME.UI && GAME.UI.notify) GAME.UI.notify('🕊 Mode mobile léger activé. Avance vers la lumière dorée.');
+  }
+
   function launch() {
     $('title-screen').style.display = 'none';
     GAME.audio.startAmbient();
@@ -72,13 +152,8 @@
         try {
           initGame();
         } catch (err) {
-          console.error('Erreur au démarrage du monde 3D', err);
           clearTimeout(loadingWatchdog);
-          hideLoadingScreen();
-          const msg = document.createElement('div');
-          msg.className = 'startup-error';
-          msg.innerHTML = '<strong>Le monde 3D n’a pas pu démarrer sur ce téléphone.</strong><br>Recharge la page, ou ferme les autres onglets puis réessaie.';
-          $('game-container').appendChild(msg);
+          startLiteMode(err);
         }
       }, 60);
     } else {
@@ -92,7 +167,7 @@
     const canvas = $('game-canvas');
     const initialSize = syncViewportSize();
     const mobile = isMobileDevice();
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: !mobile, powerPreference: mobile ? 'low-power' : 'high-performance' });
+    renderer = createRenderer(canvas, mobile);
     renderer.setSize(initialSize.w, initialSize.h, false);
     renderer.setPixelRatio(mobile ? Math.min(window.devicePixelRatio || 1, 1.25) : Math.min(window.devicePixelRatio || 1, 2));
     renderer.shadowMap.enabled = !mobile;
