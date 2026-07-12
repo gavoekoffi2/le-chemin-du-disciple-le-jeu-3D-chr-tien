@@ -41,6 +41,15 @@
     });
   }
 
+  function isMobileDevice() {
+    return window.matchMedia('(pointer: coarse)').matches || Math.min(window.innerWidth, window.innerHeight) < 720;
+  }
+
+  function hideLoadingScreen() {
+    const loading = $('loading-screen');
+    if (loading) loading.style.display = 'none';
+  }
+
   function launch() {
     $('title-screen').style.display = 'none';
     GAME.audio.startAmbient();
@@ -48,12 +57,33 @@
       started = true;
       // laisse le navigateur peindre l'écran de chargement avant la construction du monde
       $('loading-screen').style.display = 'flex';
+
+      // Sécurité mobile : sur certains téléphones WebGL prend plus de temps ou saute une frame.
+      // On ne laisse jamais l'utilisateur prisonnier de l'écran "Théopolis s'éveille…".
+      const loadingWatchdog = setTimeout(() => {
+        if ($('game-container').style.display !== 'none') {
+          hideLoadingScreen();
+          if (GAME.UI && GAME.UI.notify) GAME.UI.notify('🕊 Théopolis est prête. Avance vers la lumière dorée.');
+        }
+      }, isMobileDevice() ? 4500 : 7000);
+
       setTimeout(() => {
         $('game-container').style.display = 'block';
-        initGame();
+        try {
+          initGame();
+        } catch (err) {
+          console.error('Erreur au démarrage du monde 3D', err);
+          clearTimeout(loadingWatchdog);
+          hideLoadingScreen();
+          const msg = document.createElement('div');
+          msg.className = 'startup-error';
+          msg.innerHTML = '<strong>Le monde 3D n’a pas pu démarrer sur ce téléphone.</strong><br>Recharge la page, ou ferme les autres onglets puis réessaie.';
+          $('game-container').appendChild(msg);
+        }
       }, 60);
     } else {
       $('game-container').style.display = 'block';
+      hideLoadingScreen();
     }
   }
 
@@ -61,11 +91,12 @@
   function initGame() {
     const canvas = $('game-canvas');
     const initialSize = syncViewportSize();
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-    renderer.setSize(initialSize.w, initialSize.h);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    const mobile = isMobileDevice();
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: !mobile, powerPreference: mobile ? 'low-power' : 'high-performance' });
+    renderer.setSize(initialSize.w, initialSize.h, false);
+    renderer.setPixelRatio(mobile ? Math.min(window.devicePixelRatio || 1, 1.25) : Math.min(window.devicePixelRatio || 1, 2));
+    renderer.shadowMap.enabled = !mobile;
+    if (!mobile) renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     // rendu cinématographique : couleurs sRGB + tone mapping filmique
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;

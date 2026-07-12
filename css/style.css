@@ -65,6 +65,13 @@ button { cursor: pointer; font-family: inherit; }
 
 /* ---------- HUD ---------- */
 #game-container { position: fixed; inset: 0; width: var(--app-width); height: var(--app-height); min-height: 100vh; min-height: 100dvh; overflow: hidden; background: #0a0e1a; }
+.startup-error {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 50;
+  width: min(86vw, 420px); padding: 20px 22px; border-radius: 14px;
+  background: rgba(12, 17, 32, 0.94); border: 2px solid #ffd987; color: #ffe9b8;
+  text-align: center; line-height: 1.55; box-shadow: 0 14px 50px rgba(0,0,0,.65);
+}
+.startup-error strong { color: #ffd987; }
 #game-canvas { width: var(--app-width); height: var(--app-height); display: block; }
 #hud { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
 
