@@ -40,10 +40,19 @@ La progression est **sauvegardée automatiquement** dans le navigateur (localSto
 
 ## 🌾 Le jeu
 
-- **Personnage réaliste de grande stature (2,05 m)** : un humain 3D riggé (squelette de 49 os)
-  avec de vraies animations squelettiques. Accélération progressive : il démarre en marchant,
-  prend de la vitesse, et **se met à courir de lui-même** après quelques secondes (ou avec Maj).
-  La touche C montre son visage, et la caméra le cadre en gros plan pendant les dialogues.
+- **Personnage naturel de grande stature (2,05 m)** : un humain 3D animé par un squelette
+  de 49 os (vraies animations de marche/course), habillé en civil — **t-shirt et jean par
+  défaut** — avec un visage naturel (yeux, sourcils, nez, bouche, cheveux). Accélération
+  progressive : il démarre en marchant, prend de la vitesse, et **se met à courir de lui-même**
+  après quelques secondes (ou avec Maj). La touche C montre son visage, et la caméra le cadre
+  en gros plan pendant les dialogues.
+- **Garde-robe façon GTA** : la boutique « Chez Tabitha » (la couturière des Actes 9:39), au
+  marché, propose 7 tenues — t-shirts, chemise du dimanche, survêtement, tenue de service,
+  tunique du pèlerin, habit de fête. Certaines se débloquent en grandissant dans la foi.
+  La tenue est sauvegardée.
+- **Repère personnalisé** : clique n'importe où sur la grande carte (M) pour poser un repère —
+  une colonne violette te guide dans le monde, comme dans GTA.
+- **Radio Théopolis** : monte en voiture et la radio joue *Amazing Grace* (synthèse WebAudio).
 - **Actes de bonté spontanés** : régulièrement, un passant marqué d'un « ! » vert (visible
   aussi sur la minimap) a besoin d'aide — l'aider fait mûrir le fruit de l'Esprit.
 - **Monde ouvert 3D au rendu cinématographique** (tone mapping ACES, matériaux PBR, textures

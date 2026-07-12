@@ -102,6 +102,7 @@ GAME.Bike = (function () {
       player.pos.z = current.mesh.position.z - Math.sin(current.yaw) * (current.type === 'car' ? 2 : 1.2);
       player.group.visible = true;
       if (player.ch.isReal && player.ch.inner) player.ch.inner.rotation.x = 0;
+      if (current.type === 'car') GAME.audio.radioOff();
       GAME.UI.toast(current.type === 'car' ? 'Tu sors de la voiture.' : 'Tu descends du vélo.');
       current = null;
     } else {
@@ -110,8 +111,9 @@ GAME.Bike = (function () {
         current = v;
         player.onBike = true;
         v.yaw = player.yaw;
+        if (v.type === 'car') GAME.audio.radioOn(); // 📻 Radio Théopolis
         GAME.UI.toast(v.type === 'car'
-          ? '🚗 Tu conduis ! (Maj = accélération, F = sortir)'
+          ? '🚗 Tu conduis — Radio Théopolis allumée ! (Maj = accélérer, F = sortir)'
           : '🚲 Tu roules ! (Maj = sprint, F = descendre)');
       }
     }

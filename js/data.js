@@ -69,6 +69,25 @@ GAME.DATA.armor = [
     effet: "La Parole en toi : bonus de temps dans les quiz bibliques." }
 ];
 
+/* ---------- Garde-robe (boutique « Chez Tabitha », Actes 9:39) ---------- */
+/* sleeves: 'court' = t-shirt (avant-bras nus) · 'long' = manches longues */
+GAME.DATA.outfits = [
+  { id: 'casual',   name: 'T-shirt & jean',       icon: '👕', desc: 'La tenue de tous les jours.',
+    shirt: 0x4f8fd0, sleeves: 'court', pants: 0x35558f, shoes: 0xf0f0ee },
+  { id: 'blanc',    name: 'T-shirt blanc & jean', icon: '🤍', desc: 'Simple et lumineux.',
+    shirt: 0xf0efe8, sleeves: 'court', pants: 0x2e4a7a, shoes: 0x33383f },
+  { id: 'dimanche', name: 'Chemise du dimanche',  icon: '👔', desc: 'Élégant pour aller à l\'église.',
+    shirt: 0xf5f2e8, sleeves: 'long', pants: 0x252a35, shoes: 0x3a2a1a },
+  { id: 'sport',    name: 'Survêtement',           icon: '🎽', desc: 'Parfait pour la course de la persévérance.',
+    shirt: 0x2aa05a, sleeves: 'court', pants: 0x1c2230, shoes: 0xff8833, minStage: 1 },
+  { id: 'service',  name: 'Tenue de service',      icon: '🧰', desc: 'Pour servir les autres sans craindre la poussière.',
+    shirt: 0xc4762a, sleeves: 'long', pants: 0x4f4335, shoes: 0x2f2a24, minStage: 2 },
+  { id: 'pelerin',  name: 'Tunique du pèlerin',    icon: '🧥', desc: 'La tenue des marcheurs de la Voie.',
+    shirt: 0xd8cdb0, sleeves: 'long', pants: 0x8a7a5a, shoes: 0x6a4a2a, minStage: 3 },
+  { id: 'fete',     name: 'Habit de fête',         icon: '✨', desc: 'Pour la célébration de la moisson.',
+    shirt: 0xf5ecd0, sleeves: 'long', pants: 0xe8e0c8, shoes: 0xc9a227, minStage: 4 }
+];
+
 /* ---------- PNJ (mentors et personnages de quête) ---------- */
 /* pos = [x, z] dans la ville. minStage / maxStage : visibilité (index d'étape). */
 GAME.DATA.npcs = {
@@ -85,6 +104,8 @@ GAME.DATA.npcs = {
 
   epicier:   { name: 'Samuel l\'épicier', portrait: '🧑‍🌾', pos: [-72, 26], color: 0x7a6b2a,
     idle: "Bienvenue au marché de Théopolis ! Huile, vin, pain frais…" },
+  tabitha:   { name: 'Tabitha la couturière', portrait: '🧵', pos: [-94, 8], color: 0x9a4a7a,
+    idle: "Bienvenue chez Tabitha ! Je couds des tuniques et des vêtements pour toute la ville. (Actes 9:39)" },
   blesse:    { name: 'L\'homme blessé', portrait: '🤕', pos: [-146, 108], color: 0x777777, hidden: true },
   aubergiste:{ name: 'Rachel l\'aubergiste', portrait: '👩‍🍳', pos: [-72, 96], color: 0x9a4a2a,
     idle: "L'Auberge de la Colombe accueille tous les voyageurs." },

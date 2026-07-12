@@ -60,8 +60,41 @@ GAME.audio = (function () {
     padTimer = setInterval(playPad, 8000);
   }
 
+  /* ---------- Radio Théopolis (en voiture) ---------- */
+  // Amazing Grace (1779, domaine public) — [fréquence, durée en temps]
+  const G4 = 392, A4 = 440, C5 = 523.3, D5 = 587.3, E5 = 659.3, G5 = 784;
+  const radioTune = [
+    [G4, 1], [C5, 2], [E5, 0.5], [C5, 0.5], [E5, 2], [D5, 1], [C5, 2], [A4, 1], [G4, 3],
+    [G4, 1], [C5, 2], [E5, 0.5], [C5, 0.5], [E5, 2], [D5, 1], [G5, 3], [0, 1],
+    [E5, 1], [G5, 2], [E5, 0.5], [G5, 0.5], [E5, 1.5], [C5, 1.5], [G4, 2], [A4, 1], [C5, 2], [E5, 0.5], [C5, 0.5], [A4, 1.5], [G4, 3], [0, 1.5]
+  ];
+  let radioPlaying = false, radioStep = 0, radioTimeout = null;
+  function radioNext() {
+    if (!radioPlaying || !enabled || !ctx) return;
+    const [f, beats] = radioTune[radioStep % radioTune.length];
+    radioStep++;
+    const dur = beats * 0.42;
+    if (f > 0) {
+      tone(f, dur * 1.15, 'triangle', 0.12);
+      tone(f / 2, dur, 'sine', 0.07);
+      tone(f * 1.005, dur, 'sine', 0.04); // léger chorus
+    }
+    radioTimeout = setTimeout(radioNext, dur * 1000);
+  }
+  function radioOn() {
+    if (radioPlaying) return;
+    ensure();
+    radioPlaying = true;
+    radioStep = 0;
+    radioNext();
+  }
+  function radioOff() {
+    radioPlaying = false;
+    if (radioTimeout) { clearTimeout(radioTimeout); radioTimeout = null; }
+  }
+
   return {
-    startAmbient,
+    startAmbient, radioOn, radioOff,
     ui() { tone(660, 0.09, 'square', 0.12); },
     step() { tone(90 + Math.random() * 30, 0.05, 'triangle', 0.10); },
     pickup() { tone(523, 0.12, 'sine', 0.3); tone(784, 0.25, 'sine', 0.25, 0.1); },

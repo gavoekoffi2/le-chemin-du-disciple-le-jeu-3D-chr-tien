@@ -19,6 +19,12 @@ Tout ce qui suit a été **testé automatiquement de bout en bout** dans un navi
 - **Actes de bonté spontanés** : toutes les 40-75 s, un passant s'arrête avec un « ! » vert
   (affiché aussi sur la minimap) ; l'aider (E) accorde +1 point sur un fruit aléatoire
   (12 saynètes écrites). Vérifié automatiquement.
+- **Garde-robe** (vérifiée) : boutique Chez Tabitha au marché, 7 tenues avec aperçu des
+  couleurs, déblocage par étape de maturité, tenue persistée dans la sauvegarde.
+- **Repère de carte** (vérifié) : clic sur la grande carte → losange violet sur les cartes +
+  colonne violette dans le monde ; s'efface à l'arrivée ; persisté dans la sauvegarde.
+- **Radio Théopolis** : mélodie d'Amazing Grace (domaine public, 1779) synthétisée en WebAudio
+  quand on conduit une voiture.
 - **Mobilier urbain** : 22 bancs le long des trottoirs et 4 abribus vitrés avec collisions. Le modèle GLB (2,1 Mo)
   est embarqué en base64 dans le code pour rester compatible `file://`. L'armure de Dieu se
   fixe sur les os du squelette (casque sur la tête, bouclier à l'avant-bras, épée dans le dos…).
@@ -57,12 +63,12 @@ Tout ce qui suit a été **testé automatiquement de bout en bout** dans un navi
 
 Transparence totale :
 
-- **Le joueur est réaliste, mais son costume est militaire** : le seul modèle humain riggé
-  librement redistribuable et assez léger pour être embarqué (Soldier, rig Mixamo, utilisé par
-  les exemples officiels de Three.js) porte une tenue de soldat. Vu le thème de « l'armure de
-  Dieu » et du « bon soldat de Jésus-Christ » (2 Timothée 2:3), c'est cohérent — mais si vous
-  voulez une tenue civile, il faudra un autre modèle GLB (je peux l'intégrer si vous en
-  fournissez un, ou en télécharger un si l'accès réseau le permet).
+- **Le corps du joueur est « ré-habillé » par-dessus le squelette** : le modèle militaire
+  d'origine est rendu invisible et sert uniquement de squelette animé ; des vêtements civils
+  (t-shirt, jean, chaussures) et une tête naturelle (visage, cheveux) sont montés sur ses os
+  et suivent les vraies animations. Avantage : 7 tenues interchangeables sauvegardées ;
+  limite : les vêtements sont des segments rigides par membre (les coudes/genoux plient au
+  niveau des articulations, sans déformation de tissu).
 - **Les PNJ restent stylisés** (corps procéduraux améliorés, pas riggés) : cloner 19 modèles
   squelettiques identiques aurait donné une ville d'hommes identiques et pesé sur les
   performances. Le contraste joueur réaliste / PNJ stylisés est un compromis assumé.

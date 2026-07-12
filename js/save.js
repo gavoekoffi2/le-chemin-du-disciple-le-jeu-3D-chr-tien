@@ -16,7 +16,9 @@ GAME.newState = function () {
     pos: [0, 0, 130],         // position du joueur
     timeOfDay: 8.5,           // heure du monde (0..24)
     flags: {},                // drapeaux divers de quêtes
-    completed: []             // ids de quêtes terminées
+    completed: [],            // ids de quêtes terminées
+    outfit: 'casual',         // tenue portée (garde-robe de Tabitha)
+    waypoint: null            // repère personnalisé posé sur la carte [x, z]
   };
 };
 

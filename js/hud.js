@@ -108,6 +108,17 @@ GAME.HUD = (function () {
       ctx.beginPath(); ctx.arc(npc.pos.x, npc.pos.z, 4, 0, 7); ctx.fill();
     }
 
+    // repère personnalisé (losange violet)
+    if (GAME.state.waypoint) {
+      const [wx, wz] = GAME.state.waypoint;
+      ctx.fillStyle = '#b877ff';
+      ctx.save();
+      ctx.translate(wx, wz);
+      ctx.rotate(Math.PI / 4);
+      ctx.fillRect(-5, -5, 10, 10);
+      ctx.restore();
+    }
+
     // passant à aider (point vert clignotant)
     const kw = GAME.NPCManager.getKindWalker && GAME.NPCManager.getKindWalker();
     if (kw && Math.sin(performance.now() * 0.008) > -0.4) {
@@ -226,6 +237,26 @@ GAME.HUD = (function () {
   }
 
   function init() {
+    // clic sur la grande carte : pose / retire un repère personnalisé
+    $('bigmap').addEventListener('click', e => {
+      const rect = $('bigmap').getBoundingClientRect();
+      const px = (e.clientX - rect.left) * 560 / rect.width;
+      const pz = (e.clientY - rect.top) * 560 / rect.height;
+      const s = 560 / (2 * MAP_EXTENT) * 0.98;
+      const wx = (px - 280) / s, wz = (pz - 280) / s;
+      if (Math.abs(wx) > MAP_EXTENT || Math.abs(wz) > MAP_EXTENT) return;
+      if (GAME.state.waypoint && Math.hypot(GAME.state.waypoint[0] - wx, GAME.state.waypoint[1] - wz) < 25) {
+        GAME.state.waypoint = null;
+        GAME.UI.toast('📍 Repère retiré.');
+      } else {
+        GAME.state.waypoint = [wx, wz];
+        GAME.UI.toast('📍 Repère posé — suis la colonne violette !');
+      }
+      GAME.audio.ui();
+      GAME.save();
+      drawBigMap();
+    });
+
     // onglets du journal
     document.querySelectorAll('.jtab').forEach(tab => {
       tab.addEventListener('click', () => {

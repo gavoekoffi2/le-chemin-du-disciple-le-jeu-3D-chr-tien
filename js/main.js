@@ -304,6 +304,12 @@
       return { label: 'Réviser la Parole (quiz libre)', action: () => GAME.Minigames.start('quiz', true) };
     }
 
+    // 4 ter. boutique de vêtements Chez Tabitha
+    const tab = GAME.NPCManager.get('tabitha');
+    if (tab && tab.pos.distanceTo(ppos) < 3.4) {
+      return { label: 'Garde-robe — changer de tenue', action: () => GAME.UI.openWardrobe() };
+    }
+
     // 5. n'importe quel PNJ visible : petite phrase
     let bestNpc = null, bd = 3;
     for (const id in GAME.NPCManager.npcs) {
@@ -379,6 +385,41 @@
     });
   }
 
+  /* ---------- Repère personnalisé (posé d'un clic sur la grande carte) ---------- */
+  let waypointBeam = null;
+  function ensureWaypointBeam() {
+    if (waypointBeam) return;
+    waypointBeam = new THREE.Group();
+    const beam = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.45, 0.8, 24, 10, 1, true),
+      new THREE.MeshBasicMaterial({ color: 0xb877ff, transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false })
+    );
+    beam.position.y = 12;
+    waypointBeam.add(beam);
+    const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.6),
+      new THREE.MeshBasicMaterial({ color: 0xb877ff }));
+    gem.position.y = 3.2;
+    waypointBeam.add(gem);
+    waypointBeam.userData.gem = gem;
+    scene.add(waypointBeam);
+  }
+  function updateWaypoint(t) {
+    const wp = GAME.state.waypoint;
+    ensureWaypointBeam();
+    if (!wp) { waypointBeam.visible = false; return; }
+    waypointBeam.visible = true;
+    waypointBeam.position.set(wp[0], GAME.world.groundHeight(wp[0], wp[1]), wp[1]);
+    waypointBeam.userData.gem.rotation.y = t * 2;
+    waypointBeam.userData.gem.position.y = 3.2 + Math.sin(t * 2.5) * 0.3;
+    // arrivée : le repère s'efface
+    if (U.dist2D(GAME.Player.player.pos.x, GAME.Player.player.pos.z, wp[0], wp[1]) < 5) {
+      GAME.state.waypoint = null;
+      GAME.UI.notify('📍 Repère atteint !');
+      GAME.audio.pickup();
+      GAME.save();
+    }
+  }
+
   /* ---------- Boucle ---------- */
   let scrollsApplied = false, minimapCd = 0, frameNo = 0, lastHour = -1;
   function loop() {
@@ -410,6 +451,7 @@
     GAME.world.updateTraffic(dt);
     GAME.world.updateDayNight(dt, GAME.Player.player.pos);
     GAME.world.dynamic.forEach(fn => fn(t));
+    updateWaypoint(t);
     checkScrolls();
 
     // invite d'interaction

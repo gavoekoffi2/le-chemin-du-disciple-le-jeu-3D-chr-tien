@@ -785,6 +785,7 @@ GAME.buildCity = function (scene) {
   }
   addSign(0, 20, '⛪ Église de la Grâce');
   addSign(-72, 24, '🍞 Marché');
+  addSign(-94, 2, '🧵 Chez Tabitha');
   addSign(72, 32, '📚 Bibliothèque');
   addSign(-72, 88, '🕊 Auberge de la Colombe');
   addSign(180, -180, '🌳 Grand Parc');
