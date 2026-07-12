@@ -126,6 +126,11 @@ GAME.Bike = (function () {
     if (keys['KeyS'] || keys['ArrowDown']) accel = -0.6;
     if (keys['KeyA'] || keys['KeyQ'] || keys['ArrowLeft']) steer = 1;
     if (keys['KeyD'] || keys['ArrowRight']) steer = -1;
+    if (player.touchMove) {
+      if (player.touchMove.y < -0.12) accel = Math.max(accel, -player.touchMove.y);
+      if (player.touchMove.y > 0.18) accel = Math.min(accel, -0.6 * player.touchMove.y);
+      if (Math.abs(player.touchMove.x) > 0.12) steer = -player.touchMove.x;
+    }
     const boost = (keys['ShiftLeft'] || keys['ShiftRight']) ? P.boost : 1;
 
     v.speed = U.clamp(v.speed + accel * P.accel * dt, -8, P.maxSpeed * boost);

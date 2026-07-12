@@ -209,6 +209,13 @@
     if (it) it.action();
   }
 
+  // API publique utilisée par les contrôles tactiles mobiles.
+  // Les fonctions clavier restent inchangées pour ordinateur.
+  GAME.controls = {
+    interact: doInteract,
+    vehicle: () => GAME.Bike.toggle(GAME.Player.player)
+  };
+
   /* ---------- Parchemins (ramassage automatique) ---------- */
   function checkScrolls() {
     const ppos = GAME.Player.player.pos;

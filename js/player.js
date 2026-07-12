@@ -72,6 +72,8 @@ GAME.Player = (function () {
   function setupTouch(canvas) {
     let moveTouch = null, camTouch = null, camLX = 0, camLY = 0;
     player.touchMove = { x: 0, y: 0 };
+    canvas.style.touchAction = 'none';
+    setupMobileControls();
     canvas.addEventListener('touchstart', e => {
       for (const t of e.changedTouches) {
         if (t.clientX < window.innerWidth / 2 && moveTouch === null) {
@@ -100,6 +102,83 @@ GAME.Player = (function () {
         if (moveTouch && t.identifier === moveTouch.id) { moveTouch = null; player.touchMove.x = player.touchMove.y = 0; }
         if (t.identifier === camTouch) camTouch = null;
       }
+    });
+  }
+
+  function setupMobileControls() {
+    if (document.getElementById('mobile-controls')) return;
+
+    const wrap = document.createElement('div');
+    wrap.id = 'mobile-controls';
+    wrap.innerHTML = `
+      <div id="mobile-stick" aria-label="Déplacement">
+        <div id="mobile-stick-knob"></div>
+      </div>
+      <div id="mobile-action-buttons" aria-label="Actions tactiles">
+        <button class="mobile-btn mobile-small" data-action="journal">Journal</button>
+        <button class="mobile-btn mobile-small" data-action="map">Carte</button>
+        <button class="mobile-btn mobile-small" data-action="vehicle">Véhicule</button>
+        <button class="mobile-btn mobile-main" data-action="interact">Agir</button>
+        <button class="mobile-btn" data-action="jump">Saut</button>
+        <button class="mobile-btn" data-action="run">Courir</button>
+      </div>`;
+    document.body.appendChild(wrap);
+
+    const stick = wrap.querySelector('#mobile-stick');
+    const knob = wrap.querySelector('#mobile-stick-knob');
+    let activePointer = null;
+    const radius = 46;
+
+    function updateStick(clientX, clientY) {
+      const r = stick.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      let dx = clientX - cx;
+      let dy = clientY - cy;
+      const d = Math.hypot(dx, dy);
+      if (d > radius) { dx = dx / d * radius; dy = dy / d * radius; }
+      knob.style.transform = `translate(${dx}px, ${dy}px)`;
+      player.touchMove.x = U.clamp(dx / radius, -1, 1);
+      player.touchMove.y = U.clamp(dy / radius, -1, 1);
+    }
+    function resetStick() {
+      activePointer = null;
+      player.touchMove.x = 0;
+      player.touchMove.y = 0;
+      knob.style.transform = 'translate(0, 0)';
+    }
+    stick.addEventListener('pointerdown', e => {
+      activePointer = e.pointerId;
+      stick.setPointerCapture(e.pointerId);
+      updateStick(e.clientX, e.clientY);
+      e.preventDefault();
+    });
+    stick.addEventListener('pointermove', e => {
+      if (e.pointerId !== activePointer) return;
+      updateStick(e.clientX, e.clientY);
+      e.preventDefault();
+    });
+    stick.addEventListener('pointerup', resetStick);
+    stick.addEventListener('pointercancel', resetStick);
+
+    wrap.querySelectorAll('.mobile-btn').forEach(btn => {
+      const action = btn.dataset.action;
+      const press = e => {
+        e.preventDefault();
+        if (action === 'run') keys.ShiftLeft = true;
+        else if (action === 'jump') { keys.Space = true; setTimeout(() => { keys.Space = false; }, 180); }
+        else if (action === 'interact' && GAME.controls) GAME.controls.interact();
+        else if (action === 'vehicle' && GAME.controls) GAME.controls.vehicle();
+        else if (action === 'journal') GAME.HUD.toggleJournal();
+        else if (action === 'map') GAME.HUD.toggleMap();
+      };
+      const release = () => {
+        if (action === 'run') keys.ShiftLeft = false;
+      };
+      btn.addEventListener('pointerdown', press);
+      btn.addEventListener('pointerup', release);
+      btn.addEventListener('pointercancel', release);
+      btn.addEventListener('pointerleave', release);
     });
   }
 
