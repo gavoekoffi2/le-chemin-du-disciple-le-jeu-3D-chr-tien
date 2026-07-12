@@ -11,8 +11,15 @@ Tout ce qui suit a été **testé automatiquement de bout en bout** dans un navi
 
 - **Boucle complète du jeu** : écran titre → chargement → nouvelle partie → 15 quêtes →
   écran final, puis monde libre. Les 5 étapes de maturité s'enchaînent avec leurs écrans de passage.
-- **Personnage jouable réaliste** : humain 3D riggé (squelette Mixamo, 49 os) avec animations
-  squelettiques réelles (idle/marche/course, fondu-enchaîné entre clips). Le modèle GLB (2,1 Mo)
+- **Personnage jouable réaliste de 2,05 m** : humain 3D riggé (squelette Mixamo, 49 os) avec
+  animations squelettiques réelles (idle/marche/course, fondu-enchaîné entre clips). Mouvement
+  avec accélération progressive et passage automatique à la course après ~2,6 s de marche
+  soutenue (vérifié : 3,3 → 6,0 → 8,8 m/s avec bascule d'animation). Touche C pour voir son
+  visage ; cadrage cinématique trois-quarts face pendant les dialogues.
+- **Actes de bonté spontanés** : toutes les 40-75 s, un passant s'arrête avec un « ! » vert
+  (affiché aussi sur la minimap) ; l'aider (E) accorde +1 point sur un fruit aléatoire
+  (12 saynètes écrites). Vérifié automatiquement.
+- **Mobilier urbain** : 22 bancs le long des trottoirs et 4 abribus vitrés avec collisions. Le modèle GLB (2,1 Mo)
   est embarqué en base64 dans le code pour rester compatible `file://`. L'armure de Dieu se
   fixe sur les os du squelette (casque sur la tête, bouclier à l'avant-bras, épée dans le dos…).
   Si le décodage échoue, un personnage stylisé de secours prend le relais automatiquement.

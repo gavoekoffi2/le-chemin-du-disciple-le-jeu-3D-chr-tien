@@ -13,6 +13,7 @@ GAME.UI = (function () {
     dlgSpeakerDef = npcDef;
     busy = true;
     GAME.Player.player.frozen = true;
+    GAME.Player.enterDialogueCam();
     $('dialogue-box').style.display = 'flex';
     $('dialogue-choices').innerHTML = '';
     nextLine();
@@ -59,6 +60,7 @@ GAME.UI = (function () {
     $('dialogue-box').style.display = 'none';
     busy = false;
     GAME.Player.player.frozen = false;
+    GAME.Player.exitDialogueCam();
     const cb = dlgOnDone;
     dlgOnDone = null;
     if (cb) cb();
@@ -68,6 +70,7 @@ GAME.UI = (function () {
   function dialogueChoice(npcDef, choiceDef, onDone) {
     busy = true;
     GAME.Player.player.frozen = true;
+    GAME.Player.enterDialogueCam();
     dlgSpeakerDef = npcDef;
     $('dialogue-box').style.display = 'flex';
     $('dialogue-speaker').textContent = npcDef.name;

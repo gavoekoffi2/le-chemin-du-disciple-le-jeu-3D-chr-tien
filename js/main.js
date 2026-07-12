@@ -216,6 +216,7 @@
     window.addEventListener('keydown', e => {
       if (e.code === 'KeyE' && !GAME.UI.isBusy()) doInteract();
       if (e.code === 'KeyF' && !GAME.UI.isBusy()) GAME.Bike.toggle(GAME.Player.player);
+      if (e.code === 'KeyC' && !GAME.UI.isBusy()) GAME.Player.toggleFaceCam();
     });
 
     clock = new THREE.Clock();
@@ -316,6 +317,12 @@
         label: 'Parler à ' + bestNpc.def.name,
         action: () => GAME.UI.dialogue(bestNpc.def, [{ s: bestNpc.def.name, t: bestNpc.def.idle }])
       };
+    }
+
+    // 5 bis. acte de bonté : un passant a besoin d'aide (marqué « ! »)
+    const kw = GAME.NPCManager.getKindWalker();
+    if (kw && U.dist2D(kw.group.position.x, kw.group.position.z, ppos.x, ppos.z) < 3.2) {
+      return { label: 'Aider ce passant (acte de bonté)', action: () => GAME.NPCManager.completeKind() };
     }
 
     // 6. passant ambiant

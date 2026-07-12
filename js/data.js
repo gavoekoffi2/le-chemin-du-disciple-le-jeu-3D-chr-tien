@@ -579,6 +579,22 @@ GAME.DATA.stageUpTexts = [
   "Te voici PÈRE SPIRITUEL — un disciple qui forme des disciples.\n\nTon armure est complète. Ta dernière leçon est la plus belle : transmettre.\n\nL'Apôtre Jean t'attend à l'église de la Grâce."
 ];
 
+/* ---------- Actes de bonté spontanés (passants marqués d'un « ! ») ---------- */
+GAME.DATA.kindness = [
+  "Tu portes ses sacs de courses jusqu'au coin de la rue.",
+  "Tu ramasses les papiers qu'elle venait de faire tomber au vent.",
+  "Tu l'aides à retrouver ses clés tombées près du trottoir.",
+  "Tu indiques le chemin de l'auberge à ce voyageur perdu.",
+  "Tu tiens l'échelle pendant qu'il décroche son volet coincé.",
+  "Tu offres ta place à l'ombre et un peu d'eau fraîche.",
+  "Tu écoutes son inquiétude et tu pries pour elle, là, simplement.",
+  "Tu aides à pousser la charrette embourbée jusqu'à la route.",
+  "Tu consoles cet enfant qui a perdu sa maman de vue — la voilà !",
+  "Tu partages ton pain avec lui, et la conversation aussi.",
+  "Tu recouds la sangle de son sac avec le fil de ton kit de voyage.",
+  "Tu raccompagnes cette dame âgée jusqu'à son banc préféré."
+];
+
 /* ---------- Petites phrases des passants ---------- */
 GAME.DATA.ambientLines = [
   "Belle journée à Théopolis !", "Que la paix soit avec toi.", "Tu as vu la fontaine ? L'eau y est si claire.",

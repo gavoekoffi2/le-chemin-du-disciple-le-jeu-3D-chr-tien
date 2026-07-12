@@ -7,9 +7,11 @@ GAME.Player = (function () {
     pos: new THREE.Vector3(0, 0, 130),
     vel: new THREE.Vector3(),
     yaw: Math.PI,            // orientation du personnage
-    camYaw: Math.PI, camPitch: 0.32, camDist: 7.5,
+    camYaw: Math.PI, camPitch: 0.3, camDist: 8.5,
     onGround: true,
-    speedWalk: 5.2, speedRun: 9.5,
+    speedWalk: 5.4, speedRun: 10.2,
+    curSpeed: 0,             // vitesse actuelle (accélération progressive)
+    moveTimer: 0,            // marche prolongée => il se met à courir tout seul
     state: 'idle',
     onBike: false,
     stepCd: 0,
@@ -231,17 +233,26 @@ GAME.Player = (function () {
 
     const ax = inputAxis();
     const moving = (Math.abs(ax.x) > 0.05 || Math.abs(ax.y) > 0.05) && !player.frozen;
-    const running = moving && (keys['ShiftLeft'] || keys['ShiftRight']);
+    // il court si on tient Maj, ou de lui-même après quelques secondes de marche
+    player.moveTimer = moving ? player.moveTimer + dt : 0;
+    const running = moving && (keys['ShiftLeft'] || keys['ShiftRight'] || player.moveTimer > 2.6);
 
-    let speed = running ? player.speedRun : player.speedWalk;
-    if (GAME.state.armor.includes('ceinture')) speed *= 1.05;
-    if (running && GAME.state.armor.includes('chaussures')) speed *= 1.10;
-
+    let targetSpeed = 0;
     if (moving) {
+      targetSpeed = running ? player.speedRun : player.speedWalk;
+      if (GAME.state.armor.includes('ceinture')) targetSpeed *= 1.05;
+      if (running && GAME.state.armor.includes('chaussures')) targetSpeed *= 1.10;
+    }
+    // accélération / décélération progressives (départ souple, arrêt net)
+    const accel = targetSpeed > player.curSpeed ? 11 : 26;
+    player.curSpeed += U.clamp(targetSpeed - player.curSpeed, -accel * dt, accel * dt);
+    if (player.curSpeed < 0.05) player.curSpeed = 0;
+
+    if (moving && player.curSpeed > 0.01) {
       // direction relative à la caméra
       const dirAngle = Math.atan2(ax.x, ax.y) + player.camYaw + Math.PI;
-      const vx = Math.sin(dirAngle) * speed;
-      const vz = Math.cos(dirAngle) * speed;
+      const vx = Math.sin(dirAngle) * player.curSpeed;
+      const vz = Math.cos(dirAngle) * player.curSpeed;
       const res = collide(player.pos.x + vx * dt, player.pos.z + vz * dt);
       player.pos.x = res.x; player.pos.z = res.z;
       player.yaw = U.lerpAngle(player.yaw, dirAngle, 0.18);
@@ -249,7 +260,7 @@ GAME.Player = (function () {
       player.stepCd -= dt;
       if (player.onGround && player.stepCd <= 0) {
         GAME.audio.step();
-        player.stepCd = running ? 0.26 : 0.42;
+        player.stepCd = player.curSpeed > 7 ? 0.24 : 0.42;
       }
     }
 
@@ -269,8 +280,9 @@ GAME.Player = (function () {
       if (player.pos.y < groundY - 0.5) player.pos.y = groundY;
     }
 
-    // état d'animation
-    player.state = !player.onGround ? 'jump' : (moving ? (running ? 'run' : 'walk') : 'idle');
+    // état d'animation piloté par la vitesse réelle (transitions naturelles)
+    player.state = !player.onGround ? 'jump'
+      : (player.curSpeed > 7 ? 'run' : (player.curSpeed > 0.3 ? 'walk' : 'idle'));
     GAME.Character.animate(player.ch, t, player.state);
 
     player.group.position.copy(player.pos);
@@ -289,7 +301,7 @@ GAME.Player = (function () {
     const cy = player.camYaw, cp = player.camPitch;
     const px = player.pos.x - Math.sin(cy) * Math.cos(cp) * d;
     const pz = player.pos.z - Math.cos(cy) * Math.cos(cp) * d;
-    let py = player.pos.y + 1.6 + Math.sin(cp) * d;
+    let py = player.pos.y + 1.9 + Math.sin(cp) * d;
     // la caméra ne passe pas sous le sol
     const gy = GAME.world.groundHeight(px, pz);
     if (py < gy + 0.6) py = gy + 0.6;
@@ -303,13 +315,40 @@ GAME.Player = (function () {
       camSmoothed.lerp(camDesired, k);
     }
     cam.position.copy(camSmoothed);
-    camTarget.set(player.pos.x, player.pos.y + 1.5, player.pos.z);
+    camTarget.set(player.pos.x, player.pos.y + 1.75, player.pos.z);
     cam.lookAt(camTarget);
+  }
+
+  /* ---------- Vue du visage ---------- */
+  // Touche C : bascule caméra de face <-> caméra de dos
+  function toggleFaceCam() {
+    const frontYaw = player.yaw + Math.PI;
+    const facing = Math.cos(player.camYaw - frontYaw) > 0.5;
+    player.camYaw = facing ? player.yaw : frontYaw;
+    player.camPitch = 0.12;
+    if (!facing) player.camDist = Math.min(player.camDist, 5);
+  }
+
+  // Cadrage cinématique pendant les dialogues : on voit le visage du héros
+  let savedCam = null;
+  function enterDialogueCam() {
+    if (savedCam) return;
+    savedCam = { yaw: player.camYaw, pitch: player.camPitch, dist: player.camDist };
+    player.camYaw = player.yaw + Math.PI - 0.55; // trois-quarts face
+    player.camPitch = 0.1;
+    player.camDist = 3.8;
+  }
+  function exitDialogueCam() {
+    if (!savedCam) return;
+    player.camYaw = savedCam.yaw;
+    player.camPitch = savedCam.pitch;
+    player.camDist = savedCam.dist;
+    savedCam = null;
   }
 
   function teleport(x, z) {
     player.pos.set(x, GAME.world.groundHeight(x, z), z);
   }
 
-  return { player, init, update, teleport, keys };
+  return { player, init, update, teleport, keys, toggleFaceCam, enterDialogueCam, exitDialogueCam };
 })();

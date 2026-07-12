@@ -232,6 +232,70 @@ GAME.buildCity = function (scene) {
     }
   }
 
+  /* ---------- Mobilier urbain : bancs et abribus ---------- */
+  function addStreetBench(x, z, yaw) {
+    if (isReserved(x, z, 3)) return;
+    const g = new THREE.Group();
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.12, 0.6), GAME.mat(0x7a5a3a));
+    seat.position.y = 0.5;
+    g.add(seat);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.55, 0.1), GAME.mat(0x7a5a3a));
+    back.position.set(0, 0.85, -0.28);
+    g.add(back);
+    [[-0.9], [0.9]].forEach(([ox]) => {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.5, 0.55), GAME.mat(0x3a3f4a));
+      leg.position.set(ox, 0.25, 0);
+      g.add(leg);
+    });
+    g.position.set(x, world.groundHeight(x, z), z);
+    g.rotation.y = yaw;
+    scene.add(g);
+    addCollider(x, z, 2.2, 0.8);
+  }
+
+  function addBusStop(x, z, yaw) {
+    if (isReserved(x, z, 4)) return;
+    const g = new THREE.Group();
+    // poteaux + toit vitré
+    [[-1.6, 0], [1.6, 0]].forEach(([ox, oz]) => {
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 2.6, 6), GAME.mat(0x2a2f3a));
+      pole.position.set(ox, 1.3, oz - 0.5);
+      g.add(pole);
+    });
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(4, 0.12, 1.8),
+      new THREE.MeshStandardMaterial({ color: 0x88aacc, transparent: true, opacity: 0.7, roughness: 0.3 }));
+    roof.position.set(0, 2.6, -0.2);
+    g.add(roof);
+    // panneau
+    const sign = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.06), GAME.mat(0x3a76c4));
+    sign.position.set(-1.6, 2.1, -0.5);
+    g.add(sign);
+    // banc intégré
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.12, 0.5), GAME.mat(0x8a8a92));
+    seat.position.set(0, 0.55, -0.7);
+    g.add(seat);
+    g.position.set(x, world.groundHeight(x, z), z);
+    g.rotation.y = yaw;
+    scene.add(g);
+    addCollider(x, z - 0.5, 4, 1.6);
+  }
+
+  // bancs le long des trottoirs (dispersés)
+  for (let i = 0; i < 22; i++) {
+    const roadIdx = U.randInt(1, N - 1);
+    const c = (roadIdx - N / 2) * PITCH;
+    const along = U.rand(-HALF + 24, HALF - 24);
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const horiz = Math.random() < 0.5;
+    if (horiz) addStreetBench(along, c + side * 8.8, side > 0 ? Math.PI : 0);
+    else addStreetBench(c + side * 8.8, along, side > 0 ? -Math.PI / 2 : Math.PI / 2);
+  }
+  // abribus près des grands axes
+  addBusStop(20, -44.5, 0);
+  addBusStop(-20, 44.5, Math.PI);
+  addBusStop(116.5, 20, Math.PI / 2);
+  addBusStop(-116.5, -20, -Math.PI / 2);
+
   /* ---------- Immeubles ---------- */
   // paire de textures : façade (jour) + masque émissif (fenêtres qui s'allument la nuit)
   function makeFacadeTextures(baseColor) {

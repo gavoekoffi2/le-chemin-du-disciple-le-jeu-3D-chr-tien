@@ -86,7 +86,59 @@ GAME.NPCManager = (function () {
     }
   }
 
+  /* ---------- Actes de bonté : un passant a besoin d'aide ---------- */
+  let kindCd = 25; // premier événement 25 s après le début
+  let kindWalker = null;
+
+  function assignKind(scene) {
+    clearKind();
+    const w = U.pick(walkers);
+    if (!w) return;
+    w.kind = true;
+    w.kindTime = 45;
+    w.savedSpeed = w.speed;
+    w.speed = 0; // il s'arrête et attend de l'aide
+    const mark = makeMarkerSprite('#8ed07a', '!');
+    mark.position.y = 2.3;
+    w.group.add(mark);
+    w.kindMark = mark;
+    kindWalker = w;
+  }
+
+  function clearKind() {
+    if (kindWalker) {
+      const w = kindWalker;
+      w.kind = false;
+      if (w.kindMark) { w.group.remove(w.kindMark); w.kindMark = null; }
+      if (w.savedSpeed) w.speed = w.savedSpeed;
+      kindWalker = null;
+    }
+  }
+
+  function completeKind() {
+    if (!kindWalker) return;
+    const line = U.pick(GAME.DATA.kindness);
+    const fruit = U.pick(GAME.DATA.fruits);
+    GAME.state.fruits[fruit.id] = Math.min(100, GAME.state.fruits[fruit.id] + 1);
+    GAME.UI.notify('🤝 ' + line);
+    GAME.UI.notify(`${fruit.icon} ${fruit.name} +1`, 'fruit');
+    GAME.audio.pickup();
+    GAME.save();
+    clearKind();
+    kindCd = 40 + Math.random() * 35;
+  }
+
+  function getKindWalker() { return kindWalker; }
+
   function update(dt, t, playerPos) {
+    // événements de bonté
+    kindCd -= dt;
+    if (kindCd <= 0 && !kindWalker) { assignKind(); kindCd = 40 + Math.random() * 35; }
+    if (kindWalker) {
+      kindWalker.kindTime -= dt;
+      if (kindWalker.kindMark) kindWalker.kindMark.position.y = 2.3 + Math.sin(t * 3) * 0.15;
+      if (kindWalker.kindTime <= 0) clearKind(); // il reprend sa route
+    }
     // PNJ fixes : respiration + se tournent vers le joueur s'il est proche
     for (const id in npcs) {
       const npc = npcs[id];
@@ -129,5 +181,5 @@ GAME.NPCManager = (function () {
     return best;
   }
 
-  return { spawnAll, update, updateVisibility, get, reveal, hide, npcs, walkers, nearestWalker };
+  return { spawnAll, update, updateVisibility, get, reveal, hide, npcs, walkers, nearestWalker, getKindWalker, completeKind };
 })();

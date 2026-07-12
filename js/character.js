@@ -22,14 +22,15 @@ GAME.Character = (function () {
           if (o.isMesh || o.isSkinnedMesh) { o.castShadow = true; o.frustumCulled = false; }
           if (o.isBone) bones[o.name] = o;
         });
-        // normalise la taille à 1,78 m et oriente vers +Z (convention du jeu)
+        // grande stature de héros (~2,05 m) et orientation vers +Z (convention du jeu)
+        const TAILLE = 2.05;
         const box = new THREE.Box3().setFromObject(model);
         const h = Math.max(0.1, box.max.y - box.min.y);
         const group = new THREE.Group();
         const inner = new THREE.Group();
         inner.add(model);
-        inner.scale.setScalar(1.78 / h);
-        inner.position.y = -box.min.y * (1.78 / h);
+        inner.scale.setScalar(TAILLE / h);
+        inner.position.y = -box.min.y * (TAILLE / h);
         inner.rotation.y = Math.PI;
         group.add(inner);
 

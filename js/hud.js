@@ -108,6 +108,13 @@ GAME.HUD = (function () {
       ctx.beginPath(); ctx.arc(npc.pos.x, npc.pos.z, 4, 0, 7); ctx.fill();
     }
 
+    // passant à aider (point vert clignotant)
+    const kw = GAME.NPCManager.getKindWalker && GAME.NPCManager.getKindWalker();
+    if (kw && Math.sin(performance.now() * 0.008) > -0.4) {
+      ctx.fillStyle = '#8ed07a';
+      ctx.beginPath(); ctx.arc(kw.group.position.x, kw.group.position.z, 5, 0, 7); ctx.fill();
+    }
+
     // joueur (flèche blanche)
     const p = GAME.Player.player;
     ctx.save();

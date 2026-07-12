@@ -30,7 +30,8 @@ La progression est **sauvegardée automatiquement** dans le navigateur (localSto
 | **Souris** (cliquer-glisser) | Caméra orbitale · molette : zoom |
 | **Maj** | Courir |
 | **Espace** | Sauter |
-| **E** | Interagir / parler / prier |
+| **E** | Interagir / parler / prier / aider un passant |
+| **C** | Caméra de face (voir le visage du héros) |
 | **F** | Monter / descendre d'un véhicule (vélo ou voiture) |
 | **J** | Journal du disciple (quêtes, fruit de l'Esprit, armure, versets) |
 | **M** | Carte de Théopolis |
@@ -39,8 +40,12 @@ La progression est **sauvegardée automatiquement** dans le navigateur (localSto
 
 ## 🌾 Le jeu
 
-- **Personnage réaliste** : un humain 3D riggé (squelette de 49 os) avec de vraies animations
-  squelettiques de marche, course et repos, embarqué dans le jeu (aucun téléchargement).
+- **Personnage réaliste de grande stature (2,05 m)** : un humain 3D riggé (squelette de 49 os)
+  avec de vraies animations squelettiques. Accélération progressive : il démarre en marchant,
+  prend de la vitesse, et **se met à courir de lui-même** après quelques secondes (ou avec Maj).
+  La touche C montre son visage, et la caméra le cadre en gros plan pendant les dialogues.
+- **Actes de bonté spontanés** : régulièrement, un passant marqué d'un « ! » vert (visible
+  aussi sur la minimap) a besoin d'aide — l'aider fait mûrir le fruit de l'Esprit.
 - **Monde ouvert 3D au rendu cinématographique** (tone mapping ACES, matériaux PBR, textures
   procédurales) : une ville de 49 pâtés de maisons — église, place et fontaine, grand parc,
   Colline de la Prière, champ du Semeur, marché, auberge, bibliothèque, entrepôts, quartiers
