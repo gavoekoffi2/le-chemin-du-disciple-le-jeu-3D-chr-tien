@@ -2,9 +2,26 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>LA VOIE — L'Éveil du Disciple</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>✝</text></svg>">
+<script>
+  // Corrige les navigateurs mobiles qui réduisent la hauteur visible
+  // (barre d'adresse / mode ordinateur) et laissent un grand vide noir.
+  (function () {
+    function setAppViewport() {
+      var vv = window.visualViewport;
+      var h = Math.max(window.innerHeight || 0, vv ? vv.height : 0);
+      var w = Math.max(window.innerWidth || 0, vv ? vv.width : 0);
+      if (h) document.documentElement.style.setProperty('--app-height', h + 'px');
+      if (w) document.documentElement.style.setProperty('--app-width', w + 'px');
+    }
+    setAppViewport();
+    window.addEventListener('resize', setAppViewport, { passive: true });
+    window.addEventListener('orientationchange', setAppViewport, { passive: true });
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', setAppViewport, { passive: true });
+  })();
+</script>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>

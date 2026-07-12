@@ -8,6 +8,21 @@
   let started = false;
   let saveTimer = 0, promptEl, promptLabel;
 
+  function viewportSize() {
+    const vv = window.visualViewport;
+    return {
+      w: Math.max(window.innerWidth || 0, vv ? vv.width : 0),
+      h: Math.max(window.innerHeight || 0, vv ? vv.height : 0)
+    };
+  }
+
+  function syncViewportSize() {
+    const size = viewportSize();
+    document.documentElement.style.setProperty('--app-width', size.w + 'px');
+    document.documentElement.style.setProperty('--app-height', size.h + 'px');
+    return size;
+  }
+
   /* ---------- Écran titre ---------- */
   function initTitle() {
     if (GAME.hasSave()) $('btn-continue').style.display = 'inline-block';
@@ -45,8 +60,9 @@
   /* ---------- Initialisation 3D ---------- */
   function initGame() {
     const canvas = $('game-canvas');
+    const initialSize = syncViewportSize();
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(initialSize.w, initialSize.h);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -58,13 +74,16 @@
 
     scene = new THREE.Scene();
     GAME.scene = scene;
-    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 900);
+    camera = new THREE.PerspectiveCamera(60, initialSize.w / initialSize.h, 0.1, 900);
 
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
+    const handleResize = () => {
+      const size = syncViewportSize();
+      camera.aspect = size.w / size.h;
       camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+      renderer.setSize(size.w, size.h);
+    };
+    window.addEventListener('resize', handleResize);
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', handleResize);
 
     // monde
     GAME.world = GAME.buildCity(scene);
