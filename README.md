@@ -40,16 +40,16 @@ La progression est **sauvegardée automatiquement** dans le navigateur (localSto
 
 ## 🌾 Le jeu
 
-- **Personnage naturel de grande stature (2,05 m)** : un humain 3D animé par un squelette
-  de 49 os (vraies animations de marche/course), habillé en civil — **t-shirt et jean par
-  défaut** — avec un visage naturel (yeux, sourcils, nez, bouche, cheveux). Accélération
-  progressive : il démarre en marchant, prend de la vitesse, et **se met à courir de lui-même**
-  après quelques secondes (ou avec Maj). La touche C montre son visage, et la caméra le cadre
-  en gros plan pendant les dialogues.
+- **Héros photoréaliste de 2,05 m** : corps humain réaliste animé par squelette (49 os,
+  vraies animations de marche/course) avec un **visage issu d'un scan 3D d'une personne
+  réelle** (le scan Lee Perry-Smith, avec textures photo et carte de relief de la peau).
+  Accélération progressive : il démarre en marchant, prend de la vitesse, et **se met à
+  courir de lui-même** après quelques secondes (ou avec Maj). La touche C montre son visage,
+  et la caméra le cadre en gros plan pendant les dialogues.
 - **Garde-robe façon GTA** : la boutique « Chez Tabitha » (la couturière des Actes 9:39), au
-  marché, propose 7 tenues — t-shirts, chemise du dimanche, survêtement, tenue de service,
-  tunique du pèlerin, habit de fête. Certaines se débloquent en grandissant dans la foi.
-  La tenue est sauvegardée.
+  marché, propose 6 tenues réalistes (recolorations de la tenue technique du héros : bleu
+  nuit, noir, cuir brun, vert du berger, bleu royal, habit de lumière). Certaines se
+  débloquent en grandissant dans la foi. La tenue est sauvegardée.
 - **Repère personnalisé** : clique n'importe où sur la grande carte (M) pour poser un repère —
   une colonne violette te guide dans le monde, comme dans GTA.
 - **Radio Théopolis** : monte en voiture et la radio joue *Amazing Grace* (synthèse WebAudio).

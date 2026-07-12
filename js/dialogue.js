@@ -151,13 +151,13 @@ GAME.UI = (function () {
       <div class="mg-options">`;
     GAME.DATA.outfits.forEach(o => {
       const locked = o.minStage !== undefined && GAME.state.stage < o.minStage;
-      const worn = (GAME.state.outfit || 'casual') === o.id;
-      const sw = c => `<span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#${c.toString(16).padStart(6, '0')};margin-right:3px;vertical-align:-2px"></span>`;
+      const worn = (GAME.state.outfit || 'urbain') === o.id;
+      const sw = `<span style="display:inline-block;width:16px;height:16px;border-radius:4px;background:${o.swatch};border:1px solid #666;margin-right:4px;vertical-align:-3px"></span>`;
       html += `<button class="mg-opt" data-outfit="${o.id}" ${locked ? 'disabled style="opacity:.45"' : ''}>
         ${o.icon} <b>${o.name}</b> ${worn ? ' — ✅ portée' : ''}<br>
         <span style="font-size:13px;color:#9fb0d8">${locked
           ? '🔒 Se débloque à l\'étape « ' + GAME.DATA.stages[o.minStage].name + ' »'
-          : o.desc + ' &nbsp;' + sw(o.shirt) + sw(o.pants) + sw(o.shoes)}</span>
+          : sw + o.desc}</span>
       </button>`;
     });
     html += `</div><button class="btn-main btn-secondary" id="wardrobe-close" style="display:block;margin:16px auto 0;min-width:160px">Fermer</button>`;

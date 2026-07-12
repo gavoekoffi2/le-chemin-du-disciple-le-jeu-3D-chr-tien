@@ -63,12 +63,14 @@ Tout ce qui suit a été **testé automatiquement de bout en bout** dans un navi
 
 Transparence totale :
 
-- **Le corps du joueur est « ré-habillé » par-dessus le squelette** : le modèle militaire
-  d'origine est rendu invisible et sert uniquement de squelette animé ; des vêtements civils
-  (t-shirt, jean, chaussures) et une tête naturelle (visage, cheveux) sont montés sur ses os
-  et suivent les vraies animations. Avantage : 7 tenues interchangeables sauvegardées ;
-  limite : les vêtements sont des segments rigides par membre (les coudes/genoux plient au
-  niveau des articulations, sans déformation de tissu).
+- **Le héros est un assemblage de deux assets réels** : le corps réaliste du « Soldier »
+  (rig Mixamo, textures PBR) dont le casque, la capuche et la visière ont été découpés dans
+  la géométrie au chargement, et le **scan 3D photoréaliste Lee Perry-Smith** (visage d'une
+  personne réelle, texture photo + carte de relief) greffé sur l'os du cou. Les tenues sont
+  des recolorations réalistes de la texture du corps (canvas hue/saturation). Limites
+  honnêtes : le scan a les **yeux clos** (expression paisible, en pratique invisible aux
+  distances de jeu) et il est chauve ; la tenue reste une tenue technique à plaques (pas de
+  tissu simulé) — recolorée, elle se lit comme un équipement moderne sombre.
 - **Les PNJ restent stylisés** (corps procéduraux améliorés, pas riggés) : cloner 19 modèles
   squelettiques identiques aurait donné une ville d'hommes identiques et pesé sur les
   performances. Le contraste joueur réaliste / PNJ stylisés est un compromis assumé.

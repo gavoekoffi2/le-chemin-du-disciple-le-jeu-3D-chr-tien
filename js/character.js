@@ -18,12 +18,35 @@ GAME.Character = (function () {
       new THREE.GLTFLoader().parse(buf, '', gltf => {
         const model = gltf.scene;
         const bones = {};
+        let bodyMesh = null;
         model.traverse(o => {
-          // le corps militaire du modèle sert uniquement de SQUELETTE animé :
-          // on le masque et on habille ses os de vrais vêtements + un visage naturel
-          if (o.isMesh || o.isSkinnedMesh) { o.visible = false; o.frustumCulled = false; }
+          if (o.isMesh || o.isSkinnedMesh) {
+            o.castShadow = true;
+            o.frustumCulled = false;
+            if (o.name.indexOf('visor') !== -1) o.visible = false; // visière militaire : retirée
+            else bodyMesh = o;
+          }
           if (o.isBone) bones[o.name] = o;
         });
+
+        // Découpe du casque et de la capuche dans la géométrie (espace de bind :
+        // centimètres, Z vertical). On supprime les triangles de la zone tête.
+        if (bodyMesh && bodyMesh.geometry.index) {
+          const pos = bodyMesh.geometry.attributes.position;
+          const dead = new Set();
+          for (let i = 0; i < pos.count; i++) {
+            const z = pos.getZ(i), ax = Math.abs(pos.getX(i));
+            if ((z > 153 && ax < 19) || (z > 157.5 && ax < 30)) dead.add(i);
+          }
+          const idx = bodyMesh.geometry.index.array;
+          const kept = [];
+          for (let t = 0; t < idx.length; t += 3) {
+            if (!dead.has(idx[t]) && !dead.has(idx[t + 1]) && !dead.has(idx[t + 2])) {
+              kept.push(idx[t], idx[t + 1], idx[t + 2]);
+            }
+          }
+          bodyMesh.geometry.setIndex(kept);
+        }
         // grande stature de héros (~2,05 m) et orientation vers +Z (convention du jeu)
         const TAILLE = 2.05;
         const box = new THREE.Box3().setFromObject(model);
@@ -44,9 +67,13 @@ GAME.Character = (function () {
           else if (n.includes('walk')) actions.walk = mixer.clipAction(clip);
           else if (n.includes('run')) actions.run = mixer.clipAction(clip);
         });
-        const ch = { group, inner, model, mixer, actions, bones, isReal: true, current: null, lastT: null, parts: {}, outfitMeshes: [] };
+        const ch = {
+          group, inner, model, mixer, actions, bones, bodyMesh,
+          isReal: true, current: null, lastT: null, parts: {}, headAnchor: null
+        };
         setAction(ch, 'idle');
-        applyOutfit(ch, (GAME.state && GAME.state.outfit) || 'casual');
+        graftFace(ch);
+        applyOutfit(ch, (GAME.state && GAME.state.outfit) || 'urbain');
         cb(ch);
       }, err => { console.warn('GLB parse:', err); cb(null); });
     } catch (e) { console.warn('GLB decode:', e); cb(null); }
@@ -83,135 +110,79 @@ GAME.Character = (function () {
   }
 
   /* ================================================================
-     GARDE-ROBE — vêtements montés sur le squelette animé
+     VISAGE PHOTORÉALISTE — scan 3D greffé sur le cou du squelette
      ================================================================ */
-  const SKIN = 0xc98e5a, HAIR = 0x241a10;
-
-  // segment de membre : cylindre tendu entre un os et son enfant (suit l'animation)
-  function boneSegment(ch, boneName, childName, radiusM, color, taper) {
-    const bone = findBone(ch, boneName);
-    const child = findBone(ch, childName);
-    if (!bone || !child || child.parent !== bone) return null;
-    ch.group.updateMatrixWorld(true);
-    const ws = new THREE.Vector3(1, 1, 1);
-    bone.getWorldScale(ws);
-    const k = 1 / Math.max(1e-6, ws.x);
-    const v = child.position.clone();
-    const len = v.length();
-    if (len < 1e-6) return null;
-    const r = radiusM * k;
-    const geo = new THREE.CylinderGeometry(r * (taper || 1), r, len * 1.12, 10);
-    const mesh = new THREE.Mesh(geo, GAME.mat(color));
-    mesh.castShadow = true;
-    mesh.position.copy(v).multiplyScalar(0.5);
-    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), v.clone().normalize());
-    bone.add(mesh);
-    ch.outfitMeshes.push(mesh);
-    return mesh;
+  function graftFace(ch) {
+    if (!GAME.FACE_GLB_B64) return;
+    try {
+      const bin = atob(GAME.FACE_GLB_B64);
+      const buf = new ArrayBuffer(bin.length);
+      const u8 = new Uint8Array(buf);
+      for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      new THREE.GLTFLoader().parse(buf, '', gltf => {
+        let headMesh = null;
+        gltf.scene.traverse(o => { if (o.isMesh) headMesh = o; });
+        if (!headMesh) return;
+        const texLoader = new THREE.TextureLoader();
+        const colTex = texLoader.load('data:image/jpeg;base64,' + GAME.FACE_COL_B64);
+        colTex.encoding = THREE.sRGBEncoding;
+        const normTex = texLoader.load('data:image/jpeg;base64,' + GAME.FACE_NORM_B64);
+        headMesh.material = new THREE.MeshStandardMaterial({
+          map: colTex, normalMap: normTex, roughness: 0.62, metalness: 0
+        });
+        headMesh.castShadow = true;
+        headMesh.frustumCulled = false;
+        headMesh.geometry.computeBoundingBox();
+        const hb = headMesh.geometry.boundingBox;
+        const hh = hb.max.y - hb.min.y;
+        const neck = findBone(ch, 'Neck');
+        const headBone = findBone(ch, 'Head');
+        if (!neck || !headBone) return;
+        ch.group.updateMatrixWorld(true);
+        const ws = new THREE.Vector3(1, 1, 1);
+        neck.getWorldScale(ws);
+        const k = 1 / Math.max(1e-6, ws.x);
+        const s = 0.315 / hh * k; // buste (tête+cou+épaules) ~31,5 cm de haut
+        const grp = new THREE.Group();
+        grp.add(headMesh);
+        headMesh.scale.setScalar(s);
+        headMesh.position.set(0, -(hb.min.y + hh * 0.34) * s, 0);
+        // plonge les épaules du buste dans le col de la tenue
+        grp.position.copy(headBone.position);
+        grp.position.y -= 0.055 * k;
+        grp.position.z += 0.015 * k;
+        neck.add(grp);
+        ch.headAnchor = grp;
+        ch.headK = k;
+      }, () => {});
+    } catch (e) { /* le héros reste sans greffe de visage */ }
   }
 
-  // pièce simple attachée à un os (boîte/sphère), comptée comme vêtement
-  function bonePiece(ch, boneName, mesh, pos, rot) {
-    attachToBone(ch, boneName, mesh, pos, rot);
-    ch.outfitMeshes.push(mesh);
-    return mesh;
-  }
-
-  // tête naturelle : peau, yeux, sourcils, nez, bouche, oreilles, cheveux
-  function buildNaturalHead(ch) {
-    const g = new THREE.Group();
-    const skinMat = GAME.mat(SKIN);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.108, 16, 14), skinMat);
-    head.scale.y = 1.18;
-    head.castShadow = true;
-    g.add(head);
-    // cheveux : calotte haute + arrière
-    const hairMat = GAME.mat(HAIR);
-    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.112, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.52), hairMat);
-    hair.scale.y = 1.18;
-    hair.position.y = 0.012;
-    g.add(hair);
-    const hairBack = new THREE.Mesh(new THREE.SphereGeometry(0.108, 12, 10, 0, Math.PI, Math.PI * 0.3, Math.PI * 0.45), hairMat);
-    hairBack.scale.y = 1.18;
-    hairBack.rotation.y = Math.PI;
-    hairBack.position.set(0, 0.005, -0.012);
-    g.add(hairBack);
-    // yeux : blanc + pupille
-    [-1, 1].forEach(s => {
-      const white = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 6), GAME.mat(0xf5f5f0));
-      white.position.set(s * 0.042, 0.012, 0.093);
-      g.add(white);
-      const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.009, 6, 5), GAME.mat(0x241a14));
-      pupil.position.set(s * 0.042, 0.012, 0.108);
-      g.add(pupil);
-      // sourcil
-      const brow = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.008, 0.012), hairMat);
-      brow.position.set(s * 0.042, 0.045, 0.096);
-      brow.rotation.z = -s * 0.12;
-      g.add(brow);
-      // oreille
-      const ear = new THREE.Mesh(new THREE.SphereGeometry(0.018, 6, 5), skinMat);
-      ear.position.set(s * 0.105, 0, 0.005);
-      ear.scale.set(0.5, 1, 0.7);
-      g.add(ear);
-    });
-    // nez
-    const nose = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.036, 0.024), skinMat);
-    nose.position.set(0, -0.012, 0.104);
-    g.add(nose);
-    // bouche
-    const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.008, 0.01), GAME.mat(0x8a4a3a));
-    mouth.position.set(0, -0.055, 0.093);
-    g.add(mouth);
-    return g;
-  }
-
-  /* Habille le personnage réaliste avec une tenue de la garde-robe */
+  /* ================================================================
+     GARDE-ROBE — teintes réalistes de la tenue (texture recolorée)
+     ================================================================ */
   function applyOutfit(ch, outfitId) {
-    if (!ch.isReal) return;
+    if (!ch.isReal || !ch.bodyMesh) return;
     const def = (GAME.DATA.outfits || []).find(o => o.id === outfitId) || GAME.DATA.outfits[0];
-    // retire l'ancienne tenue (l'armure, elle, reste en place)
-    (ch.outfitMeshes || []).forEach(m => { if (m.parent) m.parent.remove(m); });
-    ch.outfitMeshes = [];
     ch.currentOutfit = def.id;
-
-    const shirt = def.shirt, pants = def.pants, shoes = def.shoes;
-    const foreColor = def.sleeves === 'long' ? shirt : SKIN;
-
-    // bassin (jean)
-    const pelvis = new THREE.Mesh(new THREE.BoxGeometry(0.31, 0.22, 0.22), GAME.mat(pants));
-    pelvis.castShadow = true;
-    bonePiece(ch, 'Hips', pelvis, [0, 0.03, 0]);
-    // torse (t-shirt / chemise)
-    boneSegment(ch, 'Spine', 'Spine1', 0.165, shirt, 1.08);
-    boneSegment(ch, 'Spine1', 'Spine2', 0.175, shirt, 1.06);
-    boneSegment(ch, 'Spine2', 'Neck', 0.165, shirt, 0.78);
-    // épaules + bras
-    ['Left', 'Right'].forEach(side => {
-      boneSegment(ch, side + 'Shoulder', side + 'Arm', 0.065, shirt);
-      boneSegment(ch, side + 'Arm', side + 'ForeArm', 0.052, def.sleeves === 'long' ? shirt : shirt); // manche courte couvre le haut du bras
-      boneSegment(ch, side + 'ForeArm', side + 'Hand', 0.042, foreColor, 0.85);
-      const hand = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6), GAME.mat(SKIN));
-      hand.castShadow = true;
-      bonePiece(ch, side + 'Hand', hand, [0, 0.04, 0]);
-      // jambes
-      boneSegment(ch, side + 'UpLeg', side + 'Leg', 0.082, pants, 0.85);
-      boneSegment(ch, side + 'Leg', side + 'Foot', 0.062, pants, 0.8);
-      // chaussures
-      const shoe = boneSegment(ch, side + 'Foot', side + 'ToeBase', 0.055, shoes, 1.1);
-      if (!shoe) {
-        const s = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.07, 0.2), GAME.mat(shoes));
-        bonePiece(ch, side + 'Foot', s, [0, 0.04, 0.05]);
-      } else {
-        const cap = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), GAME.mat(shoes));
-        bonePiece(ch, side + 'ToeBase', cap, [0, 0.01, 0]);
-      }
-    });
-    // cou + tête naturelle
-    boneSegment(ch, 'Neck', 'Head', 0.042, SKIN);
-    const headG = buildNaturalHead(ch);
-    bonePiece(ch, 'Head', headG, [0, 0.1, 0.012]);
+    const mat = ch.bodyMesh.material;
+    // texture d'origine mémorisée une seule fois
+    if (!ch.origMapImage) ch.origMapImage = mat.map.image;
+    const img = ch.origMapImage;
+    if (!img || !img.width) { setTimeout(() => applyOutfit(ch, outfitId), 300); return; }
+    const cv = document.createElement('canvas');
+    cv.width = img.width; cv.height = img.height;
+    const ctx = cv.getContext('2d');
+    ctx.filter = 'hue-rotate(' + (def.hue || 0) + 'deg) saturate(' + (def.sat !== undefined ? def.sat : 1) +
+                 ') brightness(' + (def.bright !== undefined ? def.bright : 1) + ')';
+    ctx.drawImage(img, 0, 0);
+    const tex = new THREE.CanvasTexture(cv);
+    tex.encoding = THREE.sRGBEncoding;
+    tex.flipY = false;
+    mat.map = tex;
+    mat.needsUpdate = true;
   }
+
 
   /* ================================================================
      PNJ PROCÉDURAUX (améliorés : tête ronde, visage, mains, chaussures)
@@ -388,8 +359,15 @@ GAME.Character = (function () {
         m.rotation.z = Math.PI / 2;
         attachToBone(ch, 'LeftForeArm', m, [0, 0.12, 0], [0, 0, Math.PI / 2]);
       } else if (id === 'casque') {
-        m = new THREE.Mesh(new THREE.SphereGeometry(0.128, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), GAME.mat(0xc9a227));
-        attachToBone(ch, 'Head', m, [0, 0.155, 0.012]);
+        // calotte posée sur le crâne : le visage reste visible
+        m = new THREE.Mesh(new THREE.SphereGeometry(0.102, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.42), GAME.mat(0xc9a227));
+        if (ch.headAnchor) {
+          m.scale.multiplyScalar(ch.headK);
+          m.position.set(0, 0.175 * ch.headK, -0.004 * ch.headK);
+          ch.headAnchor.add(m);
+        } else {
+          attachToBone(ch, 'Head', m, [0, 0.155, 0.012]);
+        }
       } else if (id === 'epee') {
         m = new THREE.Group();
         const blade = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.62, 0.02), GAME.mat(0xe8e8f8));
