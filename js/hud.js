@@ -211,6 +211,51 @@ GAME.HUD = (function () {
       });
       jv.innerHTML = vh;
     }
+
+    // Carrière
+    const jc = $('jt-career');
+    const st = GAME.state.stats || {};
+    const fmtTime = s => {
+      const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+      return h > 0 ? `${h} h ${m} min` : `${m} min`;
+    };
+    const questsDone = GAME.state.completed.length;
+    const armorCount = GAME.state.armor.length;
+    const fruitTotal = GAME.DATA.fruits.reduce((a, f) => a + (GAME.state.fruits[f.id] || 0), 0);
+    // trophées : conditions simples et lisibles
+    const trophies = [
+      { icon: '🐑', name: 'Bon berger', done: GAME.state.completed.includes('q02'), desc: 'Ramener les brebis perdues' },
+      { icon: '🤝', name: 'Bon Samaritain', done: GAME.state.completed.includes('q04'), desc: 'Secourir l\'homme blessé' },
+      { icon: '🛡', name: 'Combattant de la foi', done: armorCount >= 6, desc: 'Réunir toute l\'armure de Dieu' },
+      { icon: '📜', name: 'Chercheur de trésors', done: (st.versesFound || 0) >= 5, desc: 'Trouver 5 parchemins cachés' },
+      { icon: '💛', name: 'Cœur généreux', done: (st.kindActs || 0) >= 10, desc: 'Accomplir 10 actes de bonté' },
+      { icon: '🙏', name: 'Homme de prière', done: (st.prayers || 0) >= 5, desc: 'Prier 5 fois' },
+      { icon: '🏃', name: 'Marathonien de la Voie', done: (st.distance || 0) >= 3000, desc: 'Parcourir 3 km à pied' },
+      { icon: '👑', name: 'Disciple accompli', done: GAME.state.completed.includes('q15'), desc: 'Terminer le chemin' }
+    ];
+    const wonCount = trophies.filter(t => t.done).length;
+    let ch = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;margin-bottom:18px">
+      <div class="career-stat"><span>⏱ Temps de jeu</span><b>${fmtTime(st.playTime || 0)}</b></div>
+      <div class="career-stat"><span>🏃 Distance à pied</span><b>${((st.distance || 0) / 1000).toFixed(2)} km</b></div>
+      <div class="career-stat"><span>📖 Quêtes accomplies</span><b>${questsDone} / ${GAME.DATA.quests.length}</b></div>
+      <div class="career-stat"><span>🛡 Armure de Dieu</span><b>${armorCount} / 6</b></div>
+      <div class="career-stat"><span>🤝 Actes de bonté</span><b>${st.kindActs || 0}</b></div>
+      <div class="career-stat"><span>🙏 Prières</span><b>${st.prayers || 0}</b></div>
+      <div class="career-stat"><span>📜 Parchemins</span><b>${st.versesFound || 0} / ${GAME.DATA.hiddenVerses.length}</b></div>
+      <div class="career-stat"><span>🌱 Fruit de l'Esprit</span><b>${fruitTotal} / 900</b></div>
+      <div class="career-stat"><span>🏁 Record de course</span><b>${GAME.state.bestRace ? GAME.U.formatTime(GAME.state.bestRace) : '—'}</b></div>
+      <div class="career-stat"><span>🏆 Trophées</span><b>${wonCount} / ${trophies.length}</b></div>
+    </div>
+    <h4 style="color:#ffd987;margin:10px 0 8px;text-align:center">🏆 Trophées</h4>
+    <div class="trophy-grid">`;
+    trophies.forEach(t => {
+      ch += `<div class="trophy ${t.done ? 'won' : ''}">
+        <div class="t-icon">${t.done ? t.icon : '🔒'}</div>
+        <div><h4>${t.name}</h4><p>${t.desc}</p></div>
+      </div>`;
+    });
+    ch += '</div>';
+    jc.innerHTML = ch;
   }
 
   /* ---------- Panneaux ---------- */

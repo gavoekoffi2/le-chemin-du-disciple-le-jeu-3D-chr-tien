@@ -253,6 +253,7 @@
       ['paix', 'joie'].forEach(f => {
         GAME.state.fruits[f] = Math.min(100, GAME.state.fruits[f] + 1);
       });
+      if (GAME.state.stats) GAME.state.stats.prayers++;
       GAME.UI.notify('🕊 Paix +1 · ☀ Joie +1', 'fruit');
       GAME.save();
     }, 2200);
@@ -365,6 +366,7 @@
         s.taken = true;
         scene.remove(s.mesh);
         GAME.state.versesFound.push(s.ref);
+        if (GAME.state.stats) GAME.state.stats.versesFound = GAME.state.versesFound.length;
         // +2 sur deux fruits aléatoires
         for (let i = 0; i < 2; i++) {
           const f = U.pick(GAME.DATA.fruits);
@@ -423,7 +425,7 @@
   }
 
   /* ---------- Boucle ---------- */
-  let scrollsApplied = false, minimapCd = 0, frameNo = 0, lastHour = -1, introT = 0;
+  let scrollsApplied = false, minimapCd = 0, frameNo = 0, lastHour = -1, introT = 0, lastStatPos = null;
   function loop() {
     requestAnimationFrame(loop);
     const dt = Math.min(clock.getDelta(), 0.05);
@@ -487,6 +489,18 @@
         const d = U.dist2D(target.x, target.z, GAME.Player.player.pos.x, GAME.Player.player.pos.z);
         distEl.textContent = d > 8 ? '➤ à ' + Math.round(d) + ' m' : '➤ tu y es !';
       } else distEl.textContent = '';
+    }
+
+    // statistiques de carrière : temps de jeu + distance à pied
+    const st = GAME.state.stats;
+    if (st) {
+      st.playTime += dt;
+      const pp = GAME.Player.player;
+      if (!pp.onBike && lastStatPos) {
+        const d = U.dist2D(pp.pos.x, pp.pos.z, lastStatPos.x, lastStatPos.z);
+        if (d < 5) st.distance += d; // ignore les téléportations
+      }
+      lastStatPos = { x: pp.pos.x, z: pp.pos.z };
     }
 
     // sauvegarde périodique

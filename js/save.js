@@ -18,7 +18,14 @@ GAME.newState = function () {
     flags: {},                // drapeaux divers de quêtes
     completed: [],            // ids de quêtes terminées
     outfit: 'urbain',         // tenue portée (garde-robe de Tabitha)
-    waypoint: null            // repère personnalisé posé sur la carte [x, z]
+    waypoint: null,           // repère personnalisé posé sur la carte [x, z]
+    stats: {                  // statistiques cumulées (façon "carrière" de GTA)
+      playTime: 0,            // secondes de jeu
+      distance: 0,            // mètres parcourus à pied
+      kindActs: 0,            // actes de bonté accomplis
+      prayers: 0,             // prières faites
+      versesFound: 0          // parchemins collectés (miroir de versesFound.length)
+    }
   };
 };
 
@@ -40,6 +47,8 @@ GAME.loadSave = function () {
     // fusion défensive (tolère les anciennes sauvegardes)
     for (const k in base) if (s[k] === undefined) s[k] = base[k];
     for (const f in base.fruits) if (s.fruits[f] === undefined) s.fruits[f] = 0;
+    if (!s.stats) s.stats = base.stats;
+    else for (const k in base.stats) if (s.stats[k] === undefined) s.stats[k] = base.stats[k];
     return s;
   } catch (e) { return null; }
 };

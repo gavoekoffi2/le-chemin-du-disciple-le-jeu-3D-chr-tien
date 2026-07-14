@@ -117,6 +117,7 @@ GAME.NPCManager = (function () {
 
   function completeKind() {
     if (!kindWalker) return;
+    if (GAME.state.stats) GAME.state.stats.kindActs++;
     const line = U.pick(GAME.DATA.kindness);
     const fruit = U.pick(GAME.DATA.fruits);
     GAME.state.fruits[fruit.id] = Math.min(100, GAME.state.fruits[fruit.id] + 1);
