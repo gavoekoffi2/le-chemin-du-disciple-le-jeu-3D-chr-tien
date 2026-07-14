@@ -217,13 +217,15 @@
       if (e.code === 'KeyE' && !GAME.UI.isBusy()) doInteract();
       if (e.code === 'KeyF' && !GAME.UI.isBusy()) GAME.Bike.toggle(GAME.Player.player);
       if (e.code === 'KeyC' && !GAME.UI.isBusy()) GAME.Player.toggleFaceCam();
+      if (e.code === 'KeyK' && GAME.Player.player.onBike) GAME.audio.horn(); // 📯 klaxon
     });
 
     clock = new THREE.Clock();
     loop();
 
-    // message d'accueil
+    // message d'accueil + cinématique d'introduction (nouvelle partie)
     if (GAME.state.questIndex === 0 && GAME.state.stepIndex === 0) {
+      introT = 1; // la caméra descend du ciel vers le héros
       setTimeout(() => {
         GAME.UI.notify('🕊 Bienvenue à Théopolis. Suis la colonne de lumière dorée !');
       }, 1200);
@@ -421,7 +423,7 @@
   }
 
   /* ---------- Boucle ---------- */
-  let scrollsApplied = false, minimapCd = 0, frameNo = 0, lastHour = -1;
+  let scrollsApplied = false, minimapCd = 0, frameNo = 0, lastHour = -1, introT = 0;
   function loop() {
     requestAnimationFrame(loop);
     const dt = Math.min(clock.getDelta(), 0.05);
@@ -453,6 +455,15 @@
     GAME.world.dynamic.forEach(fn => fn(t));
     updateWaypoint(t);
     checkScrolls();
+
+    // cinématique d'intro : descente du ciel vers le héros
+    if (introT > 0) {
+      introT = Math.max(0, introT - dt / 4.5);
+      const e = introT * introT * (3 - 2 * introT); // adoucissement
+      GAME.Player.player.camDist = U.lerp(8.5, 30, e);
+      GAME.Player.player.camPitch = U.lerp(0.3, 1.05, e);
+      GAME.Player.player.camYaw += dt * 0.35 * e;
+    }
 
     // invite d'interaction
     if (!GAME.UI.isBusy()) {

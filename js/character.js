@@ -154,6 +154,20 @@ GAME.Character = (function () {
         neck.add(grp);
         ch.headAnchor = grp;
         ch.headK = k;
+
+        // casquette assortie à la tenue (couvre le crâne, laisse le visage libre)
+        const capMat = new THREE.MeshStandardMaterial({ color: ch.capColor || 0x3a4457, roughness: 0.8 });
+        const cap = new THREE.Group();
+        const crown = new THREE.Mesh(new THREE.SphereGeometry(0.104, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.46), capMat);
+        cap.add(crown);
+        const visor = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.105, 0.012, 14, 1, false, -Math.PI * 0.36, Math.PI * 0.72), capMat);
+        visor.position.set(0, -0.005, 0.055);
+        cap.add(visor);
+        cap.scale.setScalar(k);
+        cap.position.set(0, 0.172 * k, -0.002 * k);
+        grp.add(cap);
+        ch.capGroup = cap;
+        ch.capMat = capMat;
       }, () => {});
     } catch (e) { /* le héros reste sans greffe de visage */ }
   }
@@ -181,6 +195,9 @@ GAME.Character = (function () {
     tex.flipY = false;
     mat.map = tex;
     mat.needsUpdate = true;
+    // casquette assortie
+    ch.capColor = parseInt((def.swatch || '#3a4457').slice(1), 16);
+    if (ch.capMat) ch.capMat.color.setHex(ch.capColor);
   }
 
 
@@ -359,12 +376,19 @@ GAME.Character = (function () {
         m.rotation.z = Math.PI / 2;
         attachToBone(ch, 'LeftForeArm', m, [0, 0.12, 0], [0, 0, Math.PI / 2]);
       } else if (id === 'casque') {
+        // si la greffe du visage n'est pas encore prête, on repasse dans 500 ms
+        if (!ch.headAnchor && GAME.FACE_GLB_B64) {
+          ch.parts['armor_casque'] = true;
+          setTimeout(() => { delete ch.parts['armor_casque']; addArmorPiece(ch, 'casque'); }, 500);
+          return;
+        }
         // calotte posée sur le crâne : le visage reste visible
         m = new THREE.Mesh(new THREE.SphereGeometry(0.102, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.42), GAME.mat(0xc9a227));
         if (ch.headAnchor) {
           m.scale.multiplyScalar(ch.headK);
           m.position.set(0, 0.175 * ch.headK, -0.004 * ch.headK);
           ch.headAnchor.add(m);
+          if (ch.capGroup) ch.capGroup.visible = false; // le casque remplace la casquette
         } else {
           attachToBone(ch, 'Head', m, [0, 0.155, 0.012]);
         }

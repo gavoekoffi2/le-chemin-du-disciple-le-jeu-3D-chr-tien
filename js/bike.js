@@ -53,6 +53,20 @@ GAME.Bike = (function () {
       ph.position.set(x, 0.8, 2.32);
       g.add(ph);
     });
+    // faisceaux de phares (visibles la nuit quand on conduit)
+    const beams = new THREE.Group();
+    [-0.7, 0.7].forEach(x => {
+      const beam = new THREE.Mesh(
+        new THREE.ConeGeometry(1.4, 7, 10, 1, true),
+        new THREE.MeshBasicMaterial({ color: 0xfff0b8, transparent: true, opacity: 0.14, side: THREE.DoubleSide, depthWrite: false })
+      );
+      beam.rotation.x = -Math.PI / 2 - 0.06;
+      beam.position.set(x, 0.72, 5.8);
+      beams.add(beam);
+    });
+    beams.visible = false;
+    g.add(beams);
+    g.userData.beams = beams;
     const wheels = [];
     const wheelGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.32, 12);
     const wheelMat = GAME.mat(0x14141a);
@@ -157,6 +171,11 @@ GAME.Bike = (function () {
     }
     v.mesh.position.y = GAME.world.groundHeight(v.mesh.position.x, v.mesh.position.z);
     v.mesh.rotation.y = v.yaw;
+    // phares allumés la nuit
+    if (v.mesh.userData.beams) {
+      const h = GAME.world.timeOfDay;
+      v.mesh.userData.beams.visible = (h < 6.5 || h > 19);
+    }
     v.mesh.rotation.z = U.lerp(v.mesh.rotation.z, -steer * P.lean * U.clamp(v.speed / 10, 0, 1), 0.2);
     v.wheels.forEach(w => {
       if (v.type === 'bike') w.rotation.z -= v.speed * dt * 2.4;

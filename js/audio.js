@@ -102,6 +102,7 @@ GAME.audio = (function () {
     fail() { tone(220, 0.3, 'sawtooth', 0.12); tone(185, 0.4, 'sawtooth', 0.1, 0.15); },
     stageUp() { [392, 523, 659, 784, 1046, 1318].forEach((f, i) => tone(f, 0.6, 'sine', 0.28, i * 0.16)); },
     block() { tone(300, 0.08, 'square', 0.2); tone(500, 0.1, 'square', 0.12, 0.03); },
+    horn() { tone(370, 0.35, 'square', 0.22); tone(466, 0.35, 'square', 0.18); },
     bell() { tone(880, 1.4, 'sine', 0.2); tone(1320, 1.0, 'sine', 0.08, 0.02); },
     toggle() { enabled = !enabled; if (!enabled && padTimer) { clearInterval(padTimer); padTimer = null; } else if (enabled) startAmbient(); return enabled; }
   };
